@@ -4,6 +4,8 @@ RETURN VECTOR is a top-down combat prototype built around a single persistent th
 
 The weapon damages on the way out and on recall. Throwing it creates a temporary commitment: the player loses their primary offense, enemies continue moving, and the return path becomes a second attack that can be shaped through positioning and the environment.
 
+This project was made in under a week and it still contains some bugs.
+
 ## Open the project
 
 - Unity: **6000.0.56f1**
@@ -48,19 +50,8 @@ ReturnVector
 └─ ProjectSettings
 ```
 
-### Naming
-
-- Materials: `M_Name`
-- Gameplay ScriptableObjects: `SO_Name`
-- Scenes and scripts use descriptive names based on their role.
-- Unity render-pipeline/settings assets keep their conventional Unity names.
-
 ## Tests
 
 Edit Mode tests live in `Assets/Tests/EditMode`.
 
 They cover the deterministic travel math, state machines, surface responses, enemy hit rules, encounter timing, movement helpers, and recall constraints.
-
-## Notes
-
-The project intentionally keeps a single playable scene. Earlier construction scenes are not part of the final project.
