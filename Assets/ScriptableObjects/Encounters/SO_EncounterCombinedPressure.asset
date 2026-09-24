@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63783ce24583ffa459af0ad38ae30c6c, type: 3}
+  m_Name: SO_EncounterCombinedPressure
+  m_EditorClassIdentifier: 
+  displayName: "04 \u2014 Combined Pressure"
+  learningGoal: Combine weapon-absence management, rear-line attacks, trajectory
+    disruption and environmental routing.
+  phases:
+  - Label: Pressure and disruption
+    StartDelay: 0.2
+    MinimumDuration: 0.8
+    Spawns:
+    - Archetype: 0
+      LocalPosition: {x: -4.2, y: 0.95, z: 2}
+      Delay: 0
+      HealthMultiplier: 0.8
+      DebugLabel: 
+    - Archetype: 2
+      LocalPosition: {x: 4.5, y: 0.95, z: 3.6}
+      Delay: 0.3
+      HealthMultiplier: 0.8
+      DebugLabel: 
+  - Label: Full grammar
+    StartDelay: 0.8
+    MinimumDuration: 1.4
+    Spawns:
+    - Archetype: 1
+      LocalPosition: {x: 0, y: 0.95, z: 4}
+      Delay: 0
+      HealthMultiplier: 0.6
+      DebugLabel: 
+    - Archetype: 0
+      LocalPosition: {x: -4.8, y: 0.95, z: 1.2}
+      Delay: 0.25
+      HealthMultiplier: 0.67
+      DebugLabel: 
+    - Archetype: 0
+      LocalPosition: {x: 4.4, y: 0.95, z: 0.6}
+      Delay: 0.7
+      HealthMultiplier: 0.67
+      DebugLabel: 
+    - Archetype: 2
+      LocalPosition: {x: 4.8, y: 0.95, z: 4.5}
+      Delay: 1.1
+      HealthMultiplier: 0.78
+      DebugLabel: 

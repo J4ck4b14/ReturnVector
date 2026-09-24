@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63783ce24583ffa459af0ad38ae30c6c, type: 3}
+  m_Name: SO_EncounterReturnLine
+  m_EditorClassIdentifier: 
+  displayName: "01 \u2014 Return Line"
+  learningGoal: Use the outbound throw to place the weapon, move, then turn the return
+    into a second attack.
+  phases:
+  - Label: One target, two directions
+    StartDelay: 0.15
+    MinimumDuration: 0.4
+    Spawns:
+    - Archetype: 0
+      LocalPosition: {x: 0, y: 0.95, z: 2.7}
+      Delay: 0
+      HealthMultiplier: 0.67
+      DebugLabel: Return lesson
+  - Label: Cross the return
+    StartDelay: 0.6
+    MinimumDuration: 1
+    Spawns:
+    - Archetype: 0
+      LocalPosition: {x: -3.4, y: 0.95, z: 2.2}
+      Delay: 0
+      HealthMultiplier: 0.67
+      DebugLabel: 
+    - Archetype: 0
+      LocalPosition: {x: 3.5, y: 0.95, z: 4.1}
+      Delay: 0.45
+      HealthMultiplier: 0.67
+      DebugLabel: 

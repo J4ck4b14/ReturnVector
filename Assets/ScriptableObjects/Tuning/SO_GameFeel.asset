@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0e6ff845dfef6d448c95b49eea37e4d, type: 3}
+  m_Name: SO_GameFeel
+  m_EditorClassIdentifier: 
+  OutboundHitStop: 0.025
+  RecallHitStop: 0.045
+  HeavyBlockHitStop: 0.035
+  CatchHitStop: 0.022
+  HitStopTimeScale: 0.08
+  ThrowImpulse: 0.08
+  OutboundImpactImpulse: 0.13
+  RecallImpactImpulse: 0.23
+  CatchImpulse: 0.16
+  PlayerDamageImpulse: 0.28
+  ImpactImpulseSeconds: 0.12
+  CatchImpulseSeconds: 0.16
+  RecallZoomIn: 0.45
+  ImpactZoomPunch: 0.18
+  CatchZoomPunch: 0.26
+  ZoomSharpness: 16
+  RecallBlendSharpness: 9
+  EnemyFlashSeconds: 0.07
+  WeaponFlashSeconds: 0.055
+  PlayerDamageFlashSeconds: 0.1
+  PoseSharpness: 18

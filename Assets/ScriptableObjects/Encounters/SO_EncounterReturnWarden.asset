@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63783ce24583ffa459af0ad38ae30c6c, type: 3}
+  m_Name: SO_EncounterReturnWarden
+  m_EditorClassIdentifier: 
+  displayName: "05 \u2014 Return Warden"
+  learningGoal: Outbound attacks place the weapon; movement breaks the pin; recall
+    attacks do the real damage.
+  phases:
+  - Label: Mechanic exam
+    StartDelay: 0.2
+    MinimumDuration: 1
+    Spawns:
+    - Archetype: 3
+      LocalPosition: {x: 0, y: 1, z: 3.2}
+      Delay: 0.25
+      HealthMultiplier: 1
+      DebugLabel: Return Warden

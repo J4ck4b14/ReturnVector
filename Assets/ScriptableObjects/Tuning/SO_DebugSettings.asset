@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49ed8b89f7f32df409fc9003fb96ba8b, type: 3}
+  m_Name: SO_DebugSettings
+  m_EditorClassIdentifier: 
+  LogStateTransitions: 0
+  LogRejectedStateTransitions: 0
+  DrawWeaponOwnerLine: 0
+  DrawCollisionNormals: 0
+  DrawCastSweeps: 0
+  DrawPlannedReturnRoute: 0
+  DrawSurfaceResponses: 0
+  DrawCurvatureInfluence: 0
+  DrawActualWeaponTrace: 0
+  RecordActualWeaponTrace: 0
+  ClearTraceOnNewThrow: 1
+  TraceSampleSpacing: 0.12
+  MaxTraceSamples: 256
+  EventHistoryCapacity: 96
+  OverlayRecentEventCount: 5
+  ShowRuntimeOverlay: 0
+  ShowRecentEventsInOverlay: 0
+  ShowSessionCounters: 0
+  OwnerLineColor: {r: 0, g: 1, b: 1, a: 1}
+  CollisionNormalColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  OutboundPathColor: {r: 1, g: 0.45, b: 0.1, a: 1}
+  ReturnPathColor: {r: 0.2, g: 0.9, b: 1, a: 1}
+  ReflectionColor: {r: 1, g: 0.2, b: 0.9, a: 1}
+  CurvatureColor: {r: 0.5, g: 1, b: 0.35, a: 1}
