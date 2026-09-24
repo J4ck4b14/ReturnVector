@@ -62,6 +62,26 @@ namespace ReturnVector.Player
             }
         }
 
+        public void ResetWeaponToHand()
+        {
+            if (weapon == null)
+            {
+                return;
+            }
+
+            outboundMotor?.Abort();
+            recallMotor?.Abort();
+
+            if (recallConstraint == null)
+            {
+                recallConstraint =
+                    weapon.GetComponent<WeaponRecallConstraint>();
+            }
+
+            recallConstraint?.Release();
+            weapon.ResetToHeld();
+        }
+
         private void HandleRecallPressed()
         {
             if (weapon == null || recallMotor == null || !recallMotor.CanBegin)

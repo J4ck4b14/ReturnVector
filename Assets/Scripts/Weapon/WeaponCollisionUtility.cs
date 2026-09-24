@@ -93,6 +93,31 @@ namespace ReturnVector.Weapon
             return false;
         }
 
+
+        public static Vector3 SurfaceRestPosition(
+            Vector3 contactPoint,
+            Vector3 surfaceNormal,
+            float collisionRadius,
+            float backoff,
+            Vector3 fallback)
+        {
+            Vector3 normal = surfaceNormal;
+
+            if (normal.sqrMagnitude < 0.0001f)
+            {
+                return fallback;
+            }
+
+            normal.Normalize();
+
+            float clearance =
+                Mathf.Max(0f, collisionRadius) +
+                Mathf.Max(0.01f, backoff);
+
+            return contactPoint +
+                   normal * clearance;
+        }
+
         public static void SortHitsByDistance(
             RaycastHit[] hits,
             int hitCount)

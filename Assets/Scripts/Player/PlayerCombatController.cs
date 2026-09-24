@@ -14,6 +14,7 @@ namespace ReturnVector.Player
 
         public PlayerCombatMode Mode { get; private set; } = PlayerCombatMode.Armed;
 
+        public WeaponController Weapon => weapon;
         public bool IsArmed => Mode == PlayerCombatMode.Armed;
         public bool IsWeaponAway => Mode == PlayerCombatMode.Unarmed;
 

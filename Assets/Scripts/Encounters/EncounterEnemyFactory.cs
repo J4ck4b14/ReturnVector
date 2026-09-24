@@ -530,6 +530,20 @@ namespace ReturnVector.Encounters
                 health,
                 flash,
                 gameFeelProfile);
+
+            EnemyDeathFeedback deathFeedback =
+                root.GetComponent<EnemyDeathFeedback>() ??
+                root.AddComponent<EnemyDeathFeedback>();
+
+            Renderer rootRenderer =
+                root.GetComponent<Renderer>();
+
+            deathFeedback.Configure(
+                health,
+                root.GetComponentsInChildren<Renderer>(true),
+                rootRenderer != null
+                    ? rootRenderer.sharedMaterial
+                    : null);
         }
 
         // All archetypes share the same root conventions so movement, health and feedback line up.

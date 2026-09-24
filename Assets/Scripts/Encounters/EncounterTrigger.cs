@@ -1,4 +1,5 @@
 using ReturnVector.Player;
+using ReturnVector.Weapon;
 using UnityEngine;
 
 namespace ReturnVector.Encounters
@@ -30,6 +31,25 @@ namespace ReturnVector.Encounters
             if (player == null)
             {
                 return;
+            }
+
+            WeaponController weapon =
+                player.Weapon;
+
+            if (weapon != null &&
+                weapon.State != WeaponState.Held)
+            {
+                PlayerRecallController recall =
+                    player.GetComponent<PlayerRecallController>();
+
+                if (recall != null)
+                {
+                    recall.ResetWeaponToHand();
+                }
+                else
+                {
+                    weapon.ResetToHeld();
+                }
             }
 
             fired = true;
