@@ -40,6 +40,11 @@ namespace ReturnVector.GameFeel
             Subscribe();
         }
 
+        public void SetSplatterMaterial(Material material)
+        {
+            splatterMaterial = material;
+        }
+
         private void OnEnable()
         {
             Subscribe();

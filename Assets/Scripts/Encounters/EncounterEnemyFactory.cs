@@ -1,6 +1,8 @@
+using ReturnVector.Core;
 using ReturnVector.Enemies;
 using ReturnVector.GameFeel;
 using ReturnVector.Player;
+using ReturnVector.Surfaces;
 using ReturnVector.Weapon;
 using UnityEngine;
 
@@ -16,28 +18,37 @@ namespace ReturnVector.Encounters
         [SerializeField] private Transform player;
         [SerializeField] private PlayerTacticalStateSource tacticalState;
         [SerializeField] private WeaponController weapon;
-        [SerializeField] private WeaponInterferenceController interference;
 
         [Header("Tuning")]
         [SerializeField] private RusherEnemyTuning rusherTuning;
         [SerializeField] private ControllerEnemyTuning controllerTuning;
         [SerializeField] private ReturnWardenTuning returnWardenTuning;
         [SerializeField] private RVGameFeelProfile gameFeelProfile;
-        [SerializeField] private bool showDevelopmentOverlays = true;
 
-        [Header("Development materials")]
+        [Header("Materials")]
         [SerializeField] private Material rusherMaterial;
         [SerializeField] private Material shieldMaterial;
         [SerializeField] private Material controllerMaterial;
         [SerializeField] private Material telegraphMaterial;
         [SerializeField] private Material returnWardenMaterial;
+        [SerializeField] private Material returnWardenPhaseTwoMaterial;
         [SerializeField] private Material returnWardenTelegraphMaterial;
+
+        [Header("Warden arena")]
+        [SerializeField] private WeaponSurfaceProfile reflectiveSurface;
+        [SerializeField] private WeaponSurfaceProfile penetrableSurface;
+        [SerializeField] private WeaponSurfaceProfile absorbingSurface;
+        [SerializeField] private WeaponSurfaceProfile curvingSurface;
+        [SerializeField] private Material reflectiveSurfaceMaterial;
+        [SerializeField] private Material penetrableSurfaceMaterial;
+        [SerializeField] private Material absorbingSurfaceMaterial;
+        [SerializeField] private Material curvingSurfaceMaterial;
+        [SerializeField] private Material solidArenaMaterial;
 
         public void Configure(
             Transform newPlayer,
             PlayerTacticalStateSource newTacticalState,
             WeaponController newWeapon,
-            WeaponInterferenceController newInterference,
             RusherEnemyTuning newRusherTuning,
             ControllerEnemyTuning newControllerTuning,
             Material newRusherMaterial,
@@ -48,7 +59,6 @@ namespace ReturnVector.Encounters
             player = newPlayer;
             tacticalState = newTacticalState;
             weapon = newWeapon;
-            interference = newInterference;
             rusherTuning = newRusherTuning;
             controllerTuning = newControllerTuning;
             rusherMaterial = newRusherMaterial;
@@ -57,29 +67,23 @@ namespace ReturnVector.Encounters
             telegraphMaterial = newTelegraphMaterial;
         }
 
-        public void ConfigureGameFeel(
-            RVGameFeelProfile newProfile)
+        public void ConfigureGameFeel(RVGameFeelProfile newProfile)
         {
             gameFeelProfile = newProfile;
-        }
-
-        public void ConfigureDevelopmentOverlays(bool visible)
-        {
-            showDevelopmentOverlays = visible;
         }
 
         public void ConfigureReturnWarden(
             ReturnWardenTuning newTuning,
             Material newBossMaterial,
+            Material newBossPhaseTwoMaterial,
             Material newBossTelegraphMaterial)
         {
             returnWardenTuning = newTuning;
             returnWardenMaterial = newBossMaterial;
-            returnWardenTelegraphMaterial =
-                newBossTelegraphMaterial;
+            returnWardenPhaseTwoMaterial = newBossPhaseTwoMaterial;
+            returnWardenTelegraphMaterial = newBossTelegraphMaterial;
         }
 
-        // Encounter data stays prefab-agnostic; the prototype archetypes are assembled here.
         public EnemyHealth Spawn(
             EncounterSpawnEntry entry,
             Vector3 worldPosition,
@@ -88,28 +92,16 @@ namespace ReturnVector.Encounters
             switch (entry.Archetype)
             {
                 case EnemyArchetype.Rusher:
-                    return SpawnRusher(
-                        worldPosition,
-                        parent,
-                        entry.HealthMultiplier);
+                    return SpawnRusher(worldPosition, parent, entry.HealthMultiplier);
 
                 case EnemyArchetype.Shielded:
-                    return SpawnShielded(
-                        worldPosition,
-                        parent,
-                        entry.HealthMultiplier);
+                    return SpawnShielded(worldPosition, parent, entry.HealthMultiplier);
 
                 case EnemyArchetype.Controller:
-                    return SpawnController(
-                        worldPosition,
-                        parent,
-                        entry.HealthMultiplier);
+                    return SpawnController(worldPosition, parent, entry.HealthMultiplier);
 
                 case EnemyArchetype.ReturnWarden:
-                    return SpawnReturnWarden(
-                        worldPosition,
-                        parent,
-                        entry.HealthMultiplier);
+                    return SpawnReturnWarden(worldPosition, parent, entry.HealthMultiplier);
 
                 default:
                     return null;
@@ -126,54 +118,34 @@ namespace ReturnVector.Encounters
                     "Rusher",
                     position,
                     parent,
-                    rusherMaterial);
+                    rusherMaterial,
+                    out Transform visual);
 
-            CharacterController controller =
-                root.GetComponent<CharacterController>();
-
-            EnemyMotor motor =
-                root.AddComponent<EnemyMotor>();
+            CharacterController controller = root.GetComponent<CharacterController>();
+            EnemyMotor motor = root.AddComponent<EnemyMotor>();
             motor.Configure(controller, 900f);
 
-            EnemyHealth health =
-                root.AddComponent<EnemyHealth>();
+            EnemyHealth health = root.AddComponent<EnemyHealth>();
             health.Configure(
-                3f * Mathf.Max(0.1f, healthMultiplier));
+                3f *
+                Mathf.Max(0.1f, healthMultiplier) *
+                GameDifficulty.Current.EnemyHealthMultiplier);
 
-            RusherEnemyAI ai =
-                root.AddComponent<RusherEnemyAI>();
-            ai.Configure(
-                motor,
-                health,
-                rusherTuning,
-                player,
-                tacticalState);
+            RusherEnemyAI ai = root.AddComponent<RusherEnemyAI>();
+            ai.Configure(motor, health, rusherTuning, player, tacticalState);
 
-            Transform marker =
-                CreateTelegraphMarker(
-                    root.transform,
-                    1.2f);
+            Transform marker = CreateRadialTelegraph(root.transform, 1.2f, telegraphMaterial);
 
-            EnemyTelegraphVisual telegraph =
-                root.AddComponent<EnemyTelegraphVisual>();
-            telegraph.Configure(marker, ai, null);
-
-            GameObject nose =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Cube);
+            GameObject nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
             nose.name = "Rusher_Nose";
-            nose.transform.SetParent(root.transform);
-            nose.transform.localPosition =
-                new Vector3(0f, 0f, 0.62f);
-            nose.transform.localScale =
-                new Vector3(0.48f, 0.34f, 0.55f);
+            nose.transform.SetParent(visual, false);
+            nose.transform.localPosition = new Vector3(0f, 0f, 0.68f);
+            nose.transform.localScale = new Vector3(0.48f, 0.34f, 0.55f);
             SetMaterial(nose, rusherMaterial);
             RemoveCollider(nose);
 
-            AttachFeedback(
-                root,
-                health);
-
+            AttachAttackFeedback(root, visual, ai, marker, null);
+            AttachHitAndDeathFeedback(root, health, rusherMaterial);
             return health;
         }
 
@@ -187,50 +159,37 @@ namespace ReturnVector.Encounters
                     "Shielded",
                     position,
                     parent,
-                    shieldMaterial);
+                    shieldMaterial,
+                    out Transform visual);
 
-            CharacterController controller =
-                root.GetComponent<CharacterController>();
-
-            EnemyMotor motor =
-                root.AddComponent<EnemyMotor>();
+            CharacterController controller = root.GetComponent<CharacterController>();
+            EnemyMotor motor = root.AddComponent<EnemyMotor>();
             motor.Configure(controller, 680f);
 
-            ShieldedEnemyHealth health =
-                root.AddComponent<ShieldedEnemyHealth>();
-
+            ShieldedEnemyHealth health = root.AddComponent<ShieldedEnemyHealth>();
             health.ConfigureShield(
-                5f * Mathf.Max(0.1f, healthMultiplier),
+                5f *
+                Mathf.Max(0.1f, healthMultiplier) *
+                GameDifficulty.Current.EnemyHealthMultiplier,
                 0.25f,
                 1.6f,
                 30f);
 
-            ShieldedEnemyAI ai =
-                root.AddComponent<ShieldedEnemyAI>();
+            ShieldedEnemyAI ai = root.AddComponent<ShieldedEnemyAI>();
+            ai.Configure(motor, health, player, tacticalState, 2.15f, 2.2f);
 
-            ai.Configure(
-                motor,
-                health,
-                player,
-                tacticalState,
-                2.15f,
-                2.2f);
-
-            GameObject shield =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Cube);
+            GameObject shield = GameObject.CreatePrimitive(PrimitiveType.Cube);
             shield.name = "Shield_Front";
-            shield.transform.SetParent(root.transform);
-            shield.transform.localPosition =
-                new Vector3(0f, 0f, 0.78f);
-            shield.transform.localScale =
-                new Vector3(1.45f, 1.35f, 0.18f);
+            shield.transform.SetParent(visual, false);
+            shield.transform.localPosition = new Vector3(0f, 0f, 0.86f);
+            shield.transform.localScale = new Vector3(1.45f, 1.35f, 0.18f);
             SetMaterial(shield, shieldMaterial);
+            RemoveCollider(shield);
 
-            AttachFeedback(
-                root,
-                health);
+            Transform marker = CreateRadialTelegraph(root.transform, 1.45f, telegraphMaterial);
 
+            AttachAttackFeedback(root, visual, ai, marker, null);
+            AttachHitAndDeathFeedback(root, health, shieldMaterial);
             return health;
         }
 
@@ -244,60 +203,48 @@ namespace ReturnVector.Encounters
                     "Controller",
                     position,
                     parent,
-                    controllerMaterial);
+                    controllerMaterial,
+                    out Transform visual);
 
-            CharacterController controller =
-                root.GetComponent<CharacterController>();
-
-            EnemyMotor motor =
-                root.AddComponent<EnemyMotor>();
+            CharacterController controller = root.GetComponent<CharacterController>();
+            EnemyMotor motor = root.AddComponent<EnemyMotor>();
             motor.Configure(controller, 540f);
 
-            EnemyHealth health =
-                root.AddComponent<EnemyHealth>();
+            EnemyHealth health = root.AddComponent<EnemyHealth>();
             health.Configure(
-                3f * Mathf.Max(0.1f, healthMultiplier));
+                3f *
+                Mathf.Max(0.1f, healthMultiplier) *
+                GameDifficulty.Current.EnemyHealthMultiplier);
 
-            ControllerEnemyAI ai =
-                root.AddComponent<ControllerEnemyAI>();
-
+            ControllerEnemyAI ai = root.AddComponent<ControllerEnemyAI>();
             ai.Configure(
                 motor,
                 health,
                 controllerTuning,
                 player,
                 tacticalState,
-                weapon,
-                interference);
+                controllerMaterial);
 
-            Transform marker =
-                CreateTelegraphMarker(
-                    root.transform,
-                    1.45f);
-
-            EnemyTelegraphVisual telegraph =
-                root.AddComponent<EnemyTelegraphVisual>();
-            telegraph.Configure(marker, null, ai);
-
-            GameObject core =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Sphere);
+            GameObject core = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             core.name = "Controller_Core";
-            core.transform.SetParent(root.transform);
-            core.transform.localPosition =
-                new Vector3(0f, 0.72f, 0f);
-            core.transform.localScale =
-                Vector3.one * 0.48f;
+            core.transform.SetParent(visual, false);
+            core.transform.localPosition = new Vector3(0f, 0.72f, 0f);
+            core.transform.localScale = Vector3.one * 0.48f;
             SetMaterial(core, controllerMaterial);
             RemoveCollider(core);
 
-            AttachFeedback(
-                root,
-                health);
+            Transform lineMarker =
+                CreateLineTelegraph(
+                    root.transform,
+                    6.2f,
+                    0.18f,
+                    telegraphMaterial,
+                    "Shot_Telegraph");
 
+            AttachAttackFeedback(root, visual, ai, null, lineMarker);
+            AttachHitAndDeathFeedback(root, health, controllerMaterial);
             return health;
         }
-
 
         private EnemyHealth SpawnReturnWarden(
             Vector3 position,
@@ -309,63 +256,41 @@ namespace ReturnVector.Encounters
                     "Return_Warden",
                     position,
                     parent,
-                    returnWardenMaterial);
+                    returnWardenMaterial,
+                    out Transform visual);
 
-            root.transform.localScale =
-                new Vector3(
-                    1.45f,
-                    1.45f,
-                    1.45f);
+            visual.localScale = Vector3.one * 1.35f;
 
-            CharacterController controller =
-                root.GetComponent<CharacterController>();
-
+            CharacterController controller = root.GetComponent<CharacterController>();
             controller.height = 2.2f;
             controller.radius = 0.68f;
 
-            EnemyMotor motor =
-                root.AddComponent<EnemyMotor>();
-            motor.Configure(
-                controller,
-                520f);
+            EnemyMotor motor = root.AddComponent<EnemyMotor>();
+            motor.Configure(controller, 520f);
 
             WeaponRecallConstraint constraint =
                 weapon != null
-                    ? weapon.GetComponent<
-                        WeaponRecallConstraint>()
+                    ? weapon.GetComponent<WeaponRecallConstraint>()
                     : null;
 
-            ReturnWardenHealth health =
-                root.AddComponent<
-                    ReturnWardenHealth>();
+            ReturnWardenHealth health = root.AddComponent<ReturnWardenHealth>();
+            ReturnWardenTuning bossTuning = returnWardenTuning;
+            health.ConfigureBoss(bossTuning, constraint);
 
-            ReturnWardenTuning bossTuning =
-                returnWardenTuning;
-
-            health.ConfigureBoss(
-                bossTuning,
-                constraint);
-
-            if (bossTuning != null &&
-                healthMultiplier != 1f)
+            if (bossTuning != null)
             {
                 health.Configure(
                     bossTuning.MaxHealth *
-                    Mathf.Max(
-                        0.1f,
-                        healthMultiplier));
+                    Mathf.Max(0.1f, healthMultiplier) *
+                    GameDifficulty.Current.BossHealthMultiplier);
             }
 
             PlayerHealth playerHealth =
                 player != null
-                    ? player.GetComponentInParent<
-                        PlayerHealth>()
+                    ? player.GetComponentInParent<PlayerHealth>()
                     : null;
 
-            ReturnWardenAI ai =
-                root.AddComponent<
-                    ReturnWardenAI>();
-
+            ReturnWardenAI ai = root.AddComponent<ReturnWardenAI>();
             ai.Configure(
                 motor,
                 health,
@@ -374,258 +299,238 @@ namespace ReturnVector.Encounters
                 playerHealth,
                 constraint);
 
-            Transform marker =
-                CreateBossTelegraphMarker(
+            Material bossTelegraph =
+                returnWardenTelegraphMaterial != null
+                    ? returnWardenTelegraphMaterial
+                    : telegraphMaterial;
+
+            Transform radialMarker =
+                CreateRadialTelegraph(
                     root.transform,
-                    2.35f);
+                    bossTuning != null ? bossTuning.SlamRange * 2f : 4.3f,
+                    bossTelegraph);
 
-            ReturnWardenTelegraphVisual telegraph =
-                root.AddComponent<
-                    ReturnWardenTelegraphVisual>();
+            Transform lineMarker =
+                CreateLineTelegraph(
+                    root.transform,
+                    bossTuning != null ? bossTuning.ChargeDistance : 5.4f,
+                    0.65f,
+                    bossTelegraph,
+                    "Charge_Telegraph");
 
-            telegraph.Configure(
-                ai,
-                marker);
+            CreateWardenShoulder(visual, -0.72f);
+            CreateWardenShoulder(visual, 0.72f);
 
-            ReturnWardenDebugOverlay overlay =
-                root.AddComponent<
-                    ReturnWardenDebugOverlay>();
+            EnemyAttackFeedback attackFeedback =
+                AttachAttackFeedback(
+                    root,
+                    visual,
+                    ai,
+                    radialMarker,
+                    lineMarker);
 
-            overlay.Configure(
+            RVCameraFeedback cameraFeedback =
+                Object.FindFirstObjectByType<RVCameraFeedback>();
+
+            ReturnWardenPhaseFeedback phaseFeedback =
+                root.AddComponent<ReturnWardenPhaseFeedback>();
+
+            phaseFeedback.Configure(
                 health,
                 ai,
-                constraint);
+                bossTuning,
+                visual,
+                visual.GetComponentsInChildren<Renderer>(true),
+                returnWardenPhaseTwoMaterial,
+                bossTelegraph,
+                cameraFeedback,
+                attackFeedback);
 
-            overlay.enabled =
-                showDevelopmentOverlays;
+            AttachHitFeedback(root, health);
 
-            GameObject shoulderLeft =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Cube);
+            Transform arenaRoot =
+                parent != null && parent.parent != null
+                    ? parent.parent
+                    : parent;
 
-            shoulderLeft.name =
-                "Warden_Shoulder_L";
+            EncounterController encounter =
+                arenaRoot != null
+                    ? arenaRoot.GetComponent<EncounterController>()
+                    : null;
 
-            shoulderLeft.transform.SetParent(
-                root.transform);
+            ReturnWardenArenaController arena =
+                root.AddComponent<ReturnWardenArenaController>();
 
-            shoulderLeft.transform.localPosition =
-                new Vector3(
-                    -0.72f,
-                    0.35f,
-                    0f);
-
-            shoulderLeft.transform.localScale =
-                new Vector3(
-                    0.5f,
-                    0.45f,
-                    0.9f);
-
-            SetMaterial(
-                shoulderLeft,
-                returnWardenMaterial);
-
-            RemoveCollider(
-                shoulderLeft);
-
-            GameObject shoulderRight =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Cube);
-
-            shoulderRight.name =
-                "Warden_Shoulder_R";
-
-            shoulderRight.transform.SetParent(
-                root.transform);
-
-            shoulderRight.transform.localPosition =
-                new Vector3(
-                    0.72f,
-                    0.35f,
-                    0f);
-
-            shoulderRight.transform.localScale =
-                new Vector3(
-                    0.5f,
-                    0.45f,
-                    0.9f);
-
-            SetMaterial(
-                shoulderRight,
-                returnWardenMaterial);
-
-            RemoveCollider(
-                shoulderRight);
-
-            AttachFeedback(
-                root,
-                health);
+            arena.Configure(
+                health,
+                this,
+                encounter,
+                arenaRoot,
+                parent,
+                player,
+                cameraFeedback,
+                reflectiveSurface,
+                penetrableSurface,
+                absorbingSurface,
+                curvingSurface,
+                reflectiveSurfaceMaterial,
+                penetrableSurfaceMaterial,
+                absorbingSurfaceMaterial,
+                curvingSurfaceMaterial,
+                solidArenaMaterial,
+                bossTelegraph);
 
             return health;
         }
 
-        private Transform CreateBossTelegraphMarker(
-            Transform parent,
-            float diameter)
+        private void CreateWardenShoulder(Transform visual, float x)
         {
-            GameObject marker =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Cylinder);
-
-            marker.name =
-                "Warden_SlamTelegraph";
-
-            marker.transform.SetParent(
-                parent);
-
-            marker.transform.localPosition =
-                new Vector3(
-                    0f,
-                    -0.94f,
-                    0f);
-
-            marker.transform.localScale =
-                new Vector3(
-                    diameter,
-                    0.025f,
-                    diameter);
-
-            SetMaterial(
-                marker,
-                returnWardenTelegraphMaterial != null
-                    ? returnWardenTelegraphMaterial
-                    : telegraphMaterial);
-
-            RemoveCollider(marker);
-            marker.SetActive(false);
-
-            return marker.transform;
+            GameObject shoulder = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            shoulder.name = x < 0f ? "Warden_Shoulder_L" : "Warden_Shoulder_R";
+            shoulder.transform.SetParent(visual, false);
+            shoulder.transform.localPosition = new Vector3(x, 0.35f, 0f);
+            shoulder.transform.localScale = new Vector3(0.5f, 0.45f, 0.9f);
+            SetMaterial(shoulder, returnWardenMaterial);
+            RemoveCollider(shoulder);
         }
 
+        private EnemyAttackFeedback AttachAttackFeedback(
+            GameObject root,
+            Transform visual,
+            IEnemyAttackSource source,
+            Transform radialMarker,
+            Transform lineMarker)
+        {
+            EnemyAttackFeedback feedback =
+                root.AddComponent<EnemyAttackFeedback>();
 
-        // Feedback components subscribe to enemy events and remain presentation-only.
-        private void AttachFeedback(
+            feedback.Configure(
+                visual,
+                source,
+                radialMarker,
+                lineMarker);
+
+            return feedback;
+        }
+
+        private void AttachHitFeedback(
             GameObject root,
             EnemyHealth health)
         {
-            if (root == null ||
-                health == null)
-            {
-                return;
-            }
-
             RVRendererFlash flash =
-                root.GetComponent<RVRendererFlash>() ??
                 root.AddComponent<RVRendererFlash>();
 
             flash.Configure(
-                root.GetComponentsInChildren<
-                    Renderer>(true));
+                root.GetComponentsInChildren<Renderer>(true));
 
-            EnemyHitFeedback feedback =
-                root.GetComponent<EnemyHitFeedback>() ??
+            EnemyHitFeedback hitFeedback =
                 root.AddComponent<EnemyHitFeedback>();
 
-            feedback.Configure(
+            hitFeedback.Configure(
                 health,
                 flash,
                 gameFeelProfile);
+        }
 
-            EnemyDeathFeedback deathFeedback =
-                root.GetComponent<EnemyDeathFeedback>() ??
-                root.AddComponent<EnemyDeathFeedback>();
+        private void AttachHitAndDeathFeedback(
+            GameObject root,
+            EnemyHealth health,
+            Material splatterMaterial)
+        {
+            RVRendererFlash flash = root.AddComponent<RVRendererFlash>();
+            flash.Configure(root.GetComponentsInChildren<Renderer>(true));
 
-            Renderer rootRenderer =
-                root.GetComponent<Renderer>();
+            EnemyHitFeedback hitFeedback = root.AddComponent<EnemyHitFeedback>();
+            hitFeedback.Configure(health, flash, gameFeelProfile);
 
+            EnemyDeathFeedback deathFeedback = root.AddComponent<EnemyDeathFeedback>();
             deathFeedback.Configure(
                 health,
                 root.GetComponentsInChildren<Renderer>(true),
-                rootRenderer != null
-                    ? rootRenderer.sharedMaterial
-                    : null);
+                splatterMaterial);
         }
 
-        // All archetypes share the same root conventions so movement, health and feedback line up.
         private GameObject CreateEnemyRoot(
             string name,
             Vector3 position,
             Transform parent,
-            Material material)
+            Material material,
+            out Transform visual)
         {
-            GameObject root =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Capsule);
-
-            root.name = name;
+            GameObject root = new GameObject(name);
             root.transform.SetParent(parent);
             root.transform.position = position;
-            root.transform.localScale =
-                new Vector3(0.9f, 0.9f, 0.9f);
 
-            RemoveCollider(root);
-
-            CharacterController controller =
-                root.AddComponent<CharacterController>();
+            CharacterController controller = root.AddComponent<CharacterController>();
             controller.center = Vector3.zero;
             controller.height = 2f;
             controller.radius = 0.48f;
             controller.stepOffset = 0.15f;
             controller.skinWidth = 0.04f;
 
-            SetMaterial(root, material);
+            GameObject visualObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            visualObject.name = "Visual";
+            visualObject.transform.SetParent(root.transform, false);
+            visualObject.transform.localScale = Vector3.one * 0.9f;
+            SetMaterial(visualObject, material);
+            RemoveCollider(visualObject);
+
+            visual = visualObject.transform;
             return root;
         }
 
-        private Transform CreateTelegraphMarker(
+        private Transform CreateRadialTelegraph(
             Transform parent,
-            float diameter)
+            float diameter,
+            Material material)
         {
-            GameObject marker =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Cylinder);
-
-            marker.name = "Telegraph";
-            marker.transform.SetParent(parent);
-            marker.transform.localPosition =
-                new Vector3(0f, -0.92f, 0f);
-            marker.transform.localScale =
-                new Vector3(
-                    diameter,
-                    0.025f,
-                    diameter);
-
-            SetMaterial(marker, telegraphMaterial);
+            GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            marker.name = "Attack_Telegraph";
+            marker.transform.SetParent(parent, false);
+            marker.transform.localPosition = new Vector3(0f, -0.92f, 0f);
+            marker.transform.localScale = new Vector3(diameter, 0.025f, diameter);
+            SetMaterial(marker, material);
             RemoveCollider(marker);
             marker.SetActive(false);
-
             return marker.transform;
         }
 
-        private static void SetMaterial(
-            GameObject gameObject,
-            Material material)
+        private Transform CreateLineTelegraph(
+            Transform parent,
+            float length,
+            float width,
+            Material material,
+            string objectName)
+        {
+            float safeLength = Mathf.Max(0.2f, length);
+            GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            marker.name = objectName;
+            marker.transform.SetParent(parent, false);
+            marker.transform.localPosition = new Vector3(0f, -0.9f, safeLength * 0.5f);
+            marker.transform.localScale = new Vector3(width, 0.035f, safeLength);
+            SetMaterial(marker, material);
+            RemoveCollider(marker);
+            marker.SetActive(false);
+            return marker.transform;
+        }
+
+        private static void SetMaterial(GameObject gameObject, Material material)
         {
             if (material == null)
             {
                 return;
             }
 
-            Renderer renderer =
-                gameObject.GetComponent<Renderer>();
-
+            Renderer renderer = gameObject.GetComponent<Renderer>();
             if (renderer != null)
             {
                 renderer.sharedMaterial = material;
             }
         }
 
-        private static void RemoveCollider(
-            GameObject gameObject)
+        private static void RemoveCollider(GameObject gameObject)
         {
-            Collider collider =
-                gameObject.GetComponent<Collider>();
-
+            Collider collider = gameObject.GetComponent<Collider>();
             if (collider != null)
             {
                 collider.enabled = false;

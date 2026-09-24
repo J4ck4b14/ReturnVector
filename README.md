@@ -22,12 +22,15 @@ This project was made in under a week and it still contains some bugs.
 | Throw | Left Mouse Button | Right Trigger |
 | Recall | Right Mouse Button | Left Trigger |
 | Dodge | Space | South Button |
+| Restart after victory / death | R | Start |
 
 ## Core loop
 
 **Throw → reposition → exploit the line → recall → catch**
 
 The projectile is transform-driven and uses controlled casts rather than Rigidbody propulsion. Surface responses are authored and deterministic so the first interaction is predictable.
+
+Enemies use visible anticipation and recovery windows. The ranged archetype commits to a shot line aimed at the player, while the Return Warden escalates through three phases: an open arena, a compressed solid-walled phase, and a final full-health reinforcement phase.
 
 ## Project structure
 
@@ -50,8 +53,19 @@ ReturnVector
 └─ ProjectSettings
 ```
 
+### Naming
+
+- Materials: `M_Name`
+- Gameplay ScriptableObjects: `SO_Name`
+- Scenes and scripts use descriptive names based on their role.
+- Unity render-pipeline/settings assets keep their conventional Unity names.
+
 ## Tests
 
 Edit Mode tests live in `Assets/Tests/EditMode`.
 
-They cover the deterministic travel math, state machines, surface responses, enemy hit rules, encounter timing, movement helpers, and recall constraints.
+They cover deterministic travel math, state machines, surface responses, enemy hit rules, encounter timing, movement helpers, collision placement, and recall constraints.
+
+## Notes
+
+The project keeps a single playable scene. Earlier construction scenes are not part of the final project.

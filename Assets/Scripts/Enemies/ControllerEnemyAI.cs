@@ -1,28 +1,54 @@
+using ReturnVector.Core;
+using ReturnVector.GameFeel;
 using ReturnVector.Player;
-using ReturnVector.Weapon;
 using UnityEngine;
 
 namespace ReturnVector.Enemies
 {
     /// <summary>
-    /// Keeps range and fires disruption shots at the active weapon line.
+    /// Holds distance, commits a visible shot line, then fires at the player.
+    /// Fire cadence increases while the player is weaponless.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ControllerEnemyAI : MonoBehaviour
+    public sealed class ControllerEnemyAI : MonoBehaviour, IEnemyAttackSource
     {
+        private enum AttackState
+        {
+            Ready = 0,
+            Windup = 1,
+            Recovery = 2
+        }
+
         [SerializeField] private EnemyMotor motor;
         [SerializeField] private EnemyHealth health;
         [SerializeField] private ControllerEnemyTuning tuning;
         [SerializeField] private Transform player;
         [SerializeField] private PlayerTacticalStateSource tacticalState;
-        [SerializeField] private WeaponController weapon;
-        [SerializeField] private WeaponInterferenceController interference;
+        [SerializeField] private Material projectileMaterial;
 
+        private AttackState state;
         private float fireCooldown;
-        private float telegraphRemaining;
-        private bool telegraphing;
+        private float stateTimer;
+        private float stateDuration;
+        private Vector3 lockedDirection = Vector3.forward;
 
-        public bool IsTelegraphing => telegraphing;
+        public bool IsTelegraphing => state == AttackState.Windup;
+
+        public EnemyAttackStage AttackStage =>
+            state == AttackState.Windup
+                ? EnemyAttackStage.Windup
+                : state == AttackState.Recovery
+                    ? EnemyAttackStage.Recovery
+                    : EnemyAttackStage.None;
+
+        public EnemyAttackStyle AttackStyle => EnemyAttackStyle.Ranged;
+
+        public float AttackProgress =>
+            stateDuration <= 0.0001f
+                ? 0f
+                : Mathf.Clamp01(1f - stateTimer / stateDuration);
+
+        public Vector3 AttackDirection => lockedDirection;
 
         public void Configure(
             EnemyMotor newMotor,
@@ -30,29 +56,28 @@ namespace ReturnVector.Enemies
             ControllerEnemyTuning newTuning,
             Transform newPlayer,
             PlayerTacticalStateSource newTacticalState,
-            WeaponController newWeapon,
-            WeaponInterferenceController newInterference)
+            Material newProjectileMaterial)
         {
             motor = newMotor;
             health = newHealth;
             tuning = newTuning;
             player = newPlayer;
             tacticalState = newTacticalState;
-            weapon = newWeapon;
-            interference = newInterference;
+            projectileMaterial = newProjectileMaterial;
 
             fireCooldown =
                 newTuning != null
-                    ? newTuning.FireInterval * 0.55f
+                    ? newTuning.FireInterval * 0.55f *
+                      GameDifficulty.Current.EnemyCooldownMultiplier
                     : 1f;
-            telegraphRemaining = 0f;
-            telegraphing = false;
+            state = AttackState.Ready;
+            stateTimer = 0f;
+            stateDuration = 0f;
         }
 
         private void Update()
         {
             if (player == null ||
-                weapon == null ||
                 tuning == null ||
                 health == null ||
                 !health.CanReceiveDamage)
@@ -62,53 +87,50 @@ namespace ReturnVector.Enemies
 
             float dt = Time.deltaTime;
 
-            MaintainRange(dt);
-
-            if (telegraphing)
+            switch (state)
             {
-                TickTelegraph(dt);
-                return;
+                case AttackState.Windup:
+                    TickWindup(dt);
+                    return;
+
+                case AttackState.Recovery:
+                    TickRecovery(dt);
+                    return;
             }
 
+            MaintainRange(dt);
             fireCooldown -= dt;
 
-            // A disruption attempt starts only while there is an active travel line to contest.
-            if (fireCooldown <= 0f &&
-                CanInterfereWithWeapon())
+            if (fireCooldown <= 0f)
             {
-                telegraphing = true;
-                telegraphRemaining =
-                    tuning.TelegraphSeconds;
+                BeginShot();
             }
         }
 
         private void MaintainRange(float deltaTime)
         {
-            Vector3 toPlayer =
-                player.position -
-                transform.position;
+            Vector3 toPlayer = player.position - transform.position;
             toPlayer.y = 0f;
-
             float distance = toPlayer.magnitude;
 
-            if (distance >
-                tuning.PreferredDistance + 1f)
+            if (distance > tuning.PreferredDistance + 1f)
             {
                 motor?.MoveToward(
                     player.position,
-                    tuning.MoveSpeed,
+                    tuning.MoveSpeed *
+                    GameDifficulty.Current.EnemyMoveSpeedMultiplier,
                     deltaTime,
                     tuning.PreferredDistance);
                 return;
             }
 
-            if (distance <
-                tuning.PreferredDistance - 1f &&
+            if (distance < tuning.PreferredDistance - 1f &&
                 distance > 0.0001f)
             {
-                motor?.MoveDirection(
-                    -toPlayer.normalized,
-                    tuning.MoveSpeed,
+                motor?.MoveAwayFrom(
+                    player.position,
+                    tuning.MoveSpeed *
+                    GameDifficulty.Current.EnemyMoveSpeedMultiplier,
                     deltaTime);
                 return;
             }
@@ -117,25 +139,46 @@ namespace ReturnVector.Enemies
             motor?.FaceTarget(player.position, deltaTime);
         }
 
-        private void TickTelegraph(float deltaTime)
+        private void BeginShot()
+        {
+            Vector3 origin = transform.position + Vector3.up * 0.3f;
+            lockedDirection = player.position - origin;
+            lockedDirection.y = 0f;
+
+            if (lockedDirection.sqrMagnitude < 0.0001f)
+            {
+                lockedDirection = transform.forward;
+            }
+
+            lockedDirection.Normalize();
+            state = AttackState.Windup;
+            stateDuration =
+                tuning.TelegraphSeconds *
+                GameDifficulty.Current.EnemyWindupMultiplier;
+            stateTimer = stateDuration;
+            motor?.Stop();
+        }
+
+        private void TickWindup(float deltaTime)
         {
             motor?.Stop();
 
-            if (weapon != null)
-            {
-                motor?.FaceTarget(
-                    weapon.transform.position,
-                    deltaTime);
-            }
+            Vector3 lookPoint =
+                transform.position + lockedDirection * 4f;
+            motor?.FaceTarget(lookPoint, deltaTime);
 
-            telegraphRemaining -= deltaTime;
-            if (telegraphRemaining > 0f)
+            stateTimer -= deltaTime;
+            if (stateTimer > 0f)
             {
                 return;
             }
 
-            telegraphing = false;
-            FireDisruptionShot();
+            FireShot();
+            state = AttackState.Recovery;
+            stateDuration =
+                tuning.RecoverySeconds *
+                GameDifficulty.Current.EnemyRecoveryMultiplier;
+            stateTimer = stateDuration;
 
             bool exposed =
                 tacticalState != null &&
@@ -143,69 +186,69 @@ namespace ReturnVector.Enemies
 
             fireCooldown =
                 exposed
-                    ? tuning.ExposedFireInterval
-                    : tuning.FireInterval;
+                    ? tuning.ExposedFireInterval *
+                      GameDifficulty.Current.EnemyCooldownMultiplier
+                    : tuning.FireInterval *
+                      GameDifficulty.Current.EnemyCooldownMultiplier;
         }
 
-        private bool CanInterfereWithWeapon()
+        private void TickRecovery(float deltaTime)
         {
-            return weapon.State == WeaponState.Outbound ||
-                   weapon.State == WeaponState.Returning;
+            motor?.Stop();
+            stateTimer -= deltaTime;
+
+            if (stateTimer <= 0f)
+            {
+                state = AttackState.Ready;
+                stateDuration = 0f;
+            }
         }
 
-        private void FireDisruptionShot()
+        private void FireShot()
         {
-            if (weapon == null ||
-                interference == null ||
-                !CanInterfereWithWeapon())
+            PlayerHealth targetHealth =
+                player.GetComponentInParent<PlayerHealth>();
+
+            if (targetHealth == null ||
+                !targetHealth.CanReceiveDamage)
             {
                 return;
             }
 
-            Vector3 origin =
-                transform.position +
-                Vector3.up * 0.3f;
-
-            // The shot commits to the weapon's current position at fire time.
-            Vector3 direction =
-                weapon.transform.position - origin;
-            direction.y = 0f;
-
-            if (direction.sqrMagnitude < 0.0001f)
-            {
-                return;
-            }
+            Vector3 origin = transform.position + Vector3.up * 0.3f;
 
             GameObject projectileObject =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Sphere);
-            projectileObject.name =
-                "Controller_DisruptionShot";
-            projectileObject.transform.position =
-                origin;
-            projectileObject.transform.localScale =
-                Vector3.one * 0.28f;
+                GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            projectileObject.name = "Controller_Shot";
+            projectileObject.transform.position = origin;
+            projectileObject.transform.localScale = Vector3.one * 0.28f;
 
-            Collider collider =
-                projectileObject.GetComponent<Collider>();
+            Collider collider = projectileObject.GetComponent<Collider>();
             if (collider != null)
             {
+                collider.enabled = false;
                 Destroy(collider);
             }
 
-            EnemyDisruptionProjectile projectile =
-                projectileObject.AddComponent<
-                    EnemyDisruptionProjectile>();
+            Renderer renderer = projectileObject.GetComponent<Renderer>();
+            if (renderer != null && projectileMaterial != null)
+            {
+                renderer.sharedMaterial = projectileMaterial;
+            }
+
+            EnemyProjectile projectile =
+                projectileObject.AddComponent<EnemyProjectile>();
 
             projectile.Configure(
-                weapon,
-                interference,
-                direction,
-                transform.position,
-                tuning.ProjectileSpeed,
-                tuning.HitRadius,
+                targetHealth,
+                lockedDirection,
+                tuning.ProjectileSpeed *
+                GameDifficulty.Current.ProjectileSpeedMultiplier,
                 tuning.ProjectileLifetime,
-                tuning.DeflectionDegrees);
+                tuning.HitRadius,
+                tuning.ProjectileDamage *
+                GameDifficulty.Current.EnemyDamageMultiplier,
+                gameObject);
         }
     }
 }

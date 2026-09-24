@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ReturnVector.Combat;
+using ReturnVector.Surfaces;
 using UnityEngine;
 
 namespace ReturnVector.Weapon
@@ -37,6 +38,354 @@ namespace ReturnVector.Weapon
             return false;
         }
 
+
+
+        public static float StopDistance(
+            float hitDistance,
+            float configuredBackoff)
+        {
+            float skin = Mathf.Max(0.015f, configuredBackoff);
+            return Mathf.Max(0f, hitDistance - skin);
+        }
+
+        public static bool HasBlockingPath(
+            Vector3 origin,
+            Vector3 target,
+            float radius,
+            LayerMask collisionMask,
+            AttackPhase phase,
+            RaycastHit[] hitBuffer,
+            Transform weaponRoot,
+            Transform ownerRoot)
+        {
+            if (hitBuffer == null || hitBuffer.Length == 0)
+            {
+                return false;
+            }
+
+            Vector3 delta = target - origin;
+            float distance = delta.magnitude;
+
+            if (distance <= 0.0001f)
+            {
+                return false;
+            }
+
+            Vector3 direction = delta / distance;
+            int hitCount = Physics.SphereCastNonAlloc(
+                origin,
+                radius,
+                direction,
+                hitBuffer,
+                distance,
+                collisionMask,
+                QueryTriggerInteraction.Ignore);
+
+            SortHitsByDistance(hitBuffer, hitCount);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider collider = hitBuffer[i].collider;
+
+                if (IsOwnedCollider(
+                        collider,
+                        weaponRoot,
+                        ownerRoot))
+                {
+                    continue;
+                }
+
+                if (TryGetWeaponHitReceiver(
+                        collider,
+                        out _) ||
+                    TryGetDamageable(
+                        collider,
+                        out _))
+                {
+                    return true;
+                }
+
+                if (WeaponSurfaceResolver.TryResolve(
+                        collider,
+                        direction,
+                        hitBuffer[i].normal,
+                        phase,
+                        out WeaponSurfaceResponse response))
+                {
+                    if (!response.Blocks &&
+                        response.Kind !=
+                        WeaponSurfaceKind.Reflective)
+                    {
+                        continue;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+
+        public static bool TryResolveReachableWorldPosition(
+            Vector3 referencePosition,
+            Vector3 desiredPosition,
+            float radius,
+            float configuredBackoff,
+            LayerMask collisionMask,
+            AttackPhase phase,
+            RaycastHit[] hitBuffer,
+            Collider[] overlapBuffer,
+            Transform weaponRoot,
+            Transform ownerRoot,
+            out Vector3 resolvedPosition,
+            out bool blockedByGeometry)
+        {
+            resolvedPosition = referencePosition;
+            blockedByGeometry = false;
+
+            if (hitBuffer == null ||
+                hitBuffer.Length == 0 ||
+                overlapBuffer == null ||
+                overlapBuffer.Length == 0 ||
+                radius <= 0f)
+            {
+                return false;
+            }
+
+            if (HasBlockingOverlap(
+                    referencePosition,
+                    radius,
+                    collisionMask,
+                    phase,
+                    overlapBuffer,
+                    weaponRoot,
+                    ownerRoot))
+            {
+                return false;
+            }
+
+            Vector3 delta = desiredPosition - referencePosition;
+            float distance = delta.magnitude;
+
+            if (distance <= 0.0001f)
+            {
+                resolvedPosition = referencePosition;
+                return true;
+            }
+
+            Vector3 direction = delta / distance;
+            int hitCount = Physics.SphereCastNonAlloc(
+                referencePosition,
+                radius,
+                direction,
+                hitBuffer,
+                distance,
+                collisionMask,
+                QueryTriggerInteraction.Ignore);
+
+            SortHitsByDistance(hitBuffer, hitCount);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = hitBuffer[i];
+                Collider collider = hit.collider;
+
+                if (IsOwnedCollider(
+                        collider,
+                        weaponRoot,
+                        ownerRoot) ||
+                    TryGetWeaponHitReceiver(
+                        collider,
+                        out _) ||
+                    TryGetDamageable(
+                        collider,
+                        out _))
+                {
+                    continue;
+                }
+
+                if (IsPassThroughSurface(
+                        collider,
+                        phase))
+                {
+                    continue;
+                }
+
+                blockedByGeometry = true;
+                float travel = StopDistance(
+                    hit.distance,
+                    configuredBackoff);
+
+                Vector3 candidate =
+                    referencePosition +
+                    direction * travel;
+
+                if (HasBlockingOverlap(
+                        candidate,
+                        radius,
+                        collisionMask,
+                        phase,
+                        overlapBuffer,
+                        weaponRoot,
+                        ownerRoot))
+                {
+                    candidate = FindFarthestClearPoint(
+                        referencePosition,
+                        candidate,
+                        radius,
+                        collisionMask,
+                        phase,
+                        overlapBuffer,
+                        weaponRoot,
+                        ownerRoot);
+                }
+
+                resolvedPosition = candidate;
+                return true;
+            }
+
+            if (!HasBlockingOverlap(
+                    desiredPosition,
+                    radius,
+                    collisionMask,
+                    phase,
+                    overlapBuffer,
+                    weaponRoot,
+                    ownerRoot))
+            {
+                resolvedPosition = desiredPosition;
+                return true;
+            }
+
+            blockedByGeometry = true;
+            resolvedPosition = FindFarthestClearPoint(
+                referencePosition,
+                desiredPosition,
+                radius,
+                collisionMask,
+                phase,
+                overlapBuffer,
+                weaponRoot,
+                ownerRoot);
+            return true;
+        }
+
+        private static Vector3 FindFarthestClearPoint(
+            Vector3 clearReference,
+            Vector3 blockedTarget,
+            float radius,
+            LayerMask collisionMask,
+            AttackPhase phase,
+            Collider[] overlapBuffer,
+            Transform weaponRoot,
+            Transform ownerRoot)
+        {
+            float clearT = 0f;
+            float blockedT = 1f;
+
+            for (int i = 0; i < 12; i++)
+            {
+                float testT =
+                    (clearT + blockedT) * 0.5f;
+
+                Vector3 candidate =
+                    Vector3.Lerp(
+                        clearReference,
+                        blockedTarget,
+                        testT);
+
+                if (HasBlockingOverlap(
+                        candidate,
+                        radius,
+                        collisionMask,
+                        phase,
+                        overlapBuffer,
+                        weaponRoot,
+                        ownerRoot))
+                {
+                    blockedT = testT;
+                }
+                else
+                {
+                    clearT = testT;
+                }
+            }
+
+            return Vector3.Lerp(
+                clearReference,
+                blockedTarget,
+                clearT);
+        }
+
+        private static bool IsPassThroughSurface(
+            Collider collider,
+            AttackPhase phase)
+        {
+            return
+                WeaponSurfaceResolver.TryGetProfile(
+                    collider,
+                    out WeaponSurfaceProfile profile) &&
+                profile.AppliesTo(phase) &&
+                (profile.Kind == WeaponSurfaceKind.Penetrable ||
+                 profile.Kind == WeaponSurfaceKind.Curving);
+        }
+
+        public static bool HasBlockingOverlap(
+            Vector3 position,
+            float radius,
+            LayerMask collisionMask,
+            AttackPhase phase,
+            Collider[] overlapBuffer,
+            Transform weaponRoot,
+            Transform ownerRoot)
+        {
+            int count = Physics.OverlapSphereNonAlloc(
+                position,
+                radius,
+                overlapBuffer,
+                collisionMask,
+                QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < count; i++)
+            {
+                Collider collider = overlapBuffer[i];
+
+                if (IsOwnedCollider(
+                        collider,
+                        weaponRoot,
+                        ownerRoot))
+                {
+                    continue;
+                }
+
+                if (TryGetWeaponHitReceiver(
+                        collider,
+                        out _) ||
+                    TryGetDamageable(
+                        collider,
+                        out _))
+                {
+                    continue;
+                }
+
+                if (WeaponSurfaceResolver.TryGetProfile(
+                        collider,
+                        out WeaponSurfaceProfile profile) &&
+                    profile.AppliesTo(phase) &&
+                    (profile.Kind ==
+                        WeaponSurfaceKind.Penetrable ||
+                     profile.Kind ==
+                        WeaponSurfaceKind.Curving))
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
 
         public static bool TryGetWeaponHitReceiver(
             Collider collider,
@@ -91,31 +440,6 @@ namespace ReturnVector.Weapon
             }
 
             return false;
-        }
-
-
-        public static Vector3 SurfaceRestPosition(
-            Vector3 contactPoint,
-            Vector3 surfaceNormal,
-            float collisionRadius,
-            float backoff,
-            Vector3 fallback)
-        {
-            Vector3 normal = surfaceNormal;
-
-            if (normal.sqrMagnitude < 0.0001f)
-            {
-                return fallback;
-            }
-
-            normal.Normalize();
-
-            float clearance =
-                Mathf.Max(0f, collisionRadius) +
-                Mathf.Max(0.01f, backoff);
-
-            return contactPoint +
-                   normal * clearance;
         }
 
         public static void SortHitsByDistance(

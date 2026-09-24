@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using ReturnVector.Combat;
+using ReturnVector.Core;
 using ReturnVector.Enemies;
 using ReturnVector.Weapon;
 using UnityEngine;
@@ -136,5 +137,141 @@ namespace ReturnVector.Tests
             Object.DestroyImmediate(
                 boss);
         }
+
+
+        [Test]
+        public void VeryEasy_BossDoesNotEnterSecondPhase()
+        {
+            GameDifficulty.BeginRun(RunDifficulty.VeryEasy);
+
+            ReturnWardenTuning tuning =
+                ScriptableObject.CreateInstance<ReturnWardenTuning>();
+            tuning.ResetDefaults();
+            tuning.MaxHealth = 2f;
+
+            GameObject boss = new GameObject("Boss");
+            ReturnWardenHealth health =
+                boss.AddComponent<ReturnWardenHealth>();
+            health.ConfigureBoss(tuning, null);
+
+            DamageInfo lethal =
+                new DamageInfo(
+                    10f,
+                    Vector3.zero,
+                    Vector3.back,
+                    null,
+                    null,
+                    AttackPhase.Recall);
+
+            health.ResolveWeaponHit(in lethal);
+
+            Assert.IsFalse(health.IsPhaseTwo);
+            Assert.IsFalse(health.IsPhaseThree);
+            Assert.IsFalse(health.CanReceiveDamage);
+
+            Object.DestroyImmediate(tuning);
+            Object.DestroyImmediate(boss);
+
+            GameDifficulty.BeginRun(RunDifficulty.Normal);
+            GameDifficulty.ReturnToMenu();
+        }
+
+        [Test]
+        public void LethalPhaseTwoHit_StartsPhaseThreeAtFullHealth()
+        {
+            GameDifficulty.BeginRun(RunDifficulty.Hard);
+
+            ReturnWardenTuning tuning =
+                ScriptableObject.CreateInstance<
+                    ReturnWardenTuning>();
+
+            tuning.ResetDefaults();
+            tuning.MaxHealth = 4f;
+            tuning.PhaseTwoHealthRatio = 0.5f;
+
+            GameObject boss =
+                new GameObject("Boss");
+
+            ReturnWardenHealth health =
+                boss.AddComponent<
+                    ReturnWardenHealth>();
+
+            health.ConfigureBoss(
+                tuning,
+                null);
+
+            bool died = false;
+            health.Died += _ => died = true;
+
+            DamageInfo phaseOneDamage =
+                new DamageInfo(
+                    1.2f,
+                    Vector3.zero,
+                    Vector3.back,
+                    null,
+                    null,
+                    AttackPhase.Recall);
+
+            health.ResolveWeaponHit(
+                in phaseOneDamage);
+
+            Assert.IsTrue(
+                health.IsPhaseTwo);
+
+            health.CompletePhaseTransition();
+
+            DamageInfo lethalPhaseTwoDamage =
+                new DamageInfo(
+                    2f,
+                    Vector3.zero,
+                    Vector3.back,
+                    null,
+                    null,
+                    AttackPhase.Recall);
+
+            health.ResolveWeaponHit(
+                in lethalPhaseTwoDamage);
+
+            Assert.IsTrue(
+                health.IsPhaseThree);
+
+            Assert.IsTrue(
+                health.IsTransitioning);
+
+            Assert.AreEqual(
+                tuning.MaxHealth,
+                health.CurrentHealth,
+                0.001f);
+
+            Assert.IsFalse(
+                died);
+
+            health.CompletePhaseTransition();
+
+            DamageInfo finalDamage =
+                new DamageInfo(
+                    10f,
+                    Vector3.zero,
+                    Vector3.back,
+                    null,
+                    null,
+                    AttackPhase.Recall);
+
+            health.ResolveWeaponHit(
+                in finalDamage);
+
+            Assert.IsTrue(
+                died);
+
+            Object.DestroyImmediate(
+                tuning);
+
+            Object.DestroyImmediate(
+                boss);
+
+            GameDifficulty.BeginRun(RunDifficulty.Normal);
+            GameDifficulty.ReturnToMenu();
+        }
+
     }
 }

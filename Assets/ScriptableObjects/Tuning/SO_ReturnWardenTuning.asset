@@ -19,13 +19,39 @@ MonoBehaviour:
   PinFailSafeSeconds: 6
   PhaseTwoHealthRatio: 0.5
   PhaseTwoPinDistanceMultiplier: 1.25
-  BaseMoveSpeed: 2.6
-  PinnedPressureSpeed: 4.1
-  PhaseTwoSpeedMultiplier: 1.18
+  PhaseTwoSpeedMultiplier: 2.15
+  PhaseTwoRecoveryMultiplier: 0.72
+  PhaseTwoCooldownMultiplier: 0.62
+  PhaseTwoChargeSpeedMultiplier: 1.22
+  PhaseTwoDamageMultiplier: 1.15
+  PhaseTransitionDuration: 2.35
+  PhaseThreeSpeedMultiplier: 1.08
+  PhaseThreeRecoveryMultiplier: 0.88
+  PhaseThreeCooldownMultiplier: 0.82
+  PhaseThreeChargeSpeedMultiplier: 1.05
+  PhaseThreeDamageMultiplier: 1.2
+  PhaseThreeTransitionDuration: 2.65
+  BaseMoveSpeed: 1.85
+  PinnedPressureSpeed: 2.75
   PreferredDistance: 1.8
   SlamRange: 2.15
-  SlamDamage: 2
-  SlamWindup: 0.62
-  PhaseTwoWindup: 0.4
-  SlamRecovery: 0.85
-  SlamCooldown: 1.6
+  SlamDamage: 2.2
+  SlamWindup: 0.72
+  PhaseTwoSlamWindup: 0.38
+  SlamRecovery: 0.82
+  SlamCooldown: 1.45
+  ChargeTriggerRange: 7.5
+  ChargeWindup: 0.72
+  PhaseTwoChargeWindup: 0.42
+  ChargeSpeed: 10.5
+  ChargeDistance: 5.4
+  ChargeHitRadius: 1.05
+  ChargeDamage: 1.55
+  ChargeRecovery: 0.72
+  ChargeCooldown: 1.9
+  ShockwaveRange: 4.25
+  ShockwaveDamage: 3
+  ShockwavePushDistance: 2.6
+  ShockwaveWindup: 0.82
+  ShockwaveRecovery: 0.92
+  ShockwaveCooldown: 2.3

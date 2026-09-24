@@ -18,7 +18,7 @@ namespace ReturnVector.Weapon
         [Min(0.01f)] public float OutboundSpeed = 26f;
         [Min(0.01f)] public float MaxDistance = 18f;
         [Min(0.001f)] public float CollisionRadius = 0.12f;
-        [Min(0f)] public float SurfaceBackoff = 0.005f;
+        [Min(0f)] public float SurfaceBackoff = 0.015f;
         public LayerMask CollisionMask = ~0;
 
         [Header("Simulation")]
@@ -46,7 +46,7 @@ namespace ReturnVector.Weapon
             OutboundSpeed = 26f;
             MaxDistance = 18f;
             CollisionRadius = 0.12f;
-            SurfaceBackoff = 0.005f;
+            SurfaceBackoff = 0.015f;
             CollisionMask = ~0;
             SimulationHz = 120;
             MaxSimulationStepsPerFrame = 12;

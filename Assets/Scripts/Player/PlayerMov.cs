@@ -1,4 +1,5 @@
 using System;
+using ReturnVector.Core;
 using ReturnVector.Input;
 using UnityEngine;
 
@@ -40,7 +41,10 @@ namespace ReturnVector.Player
                     return 0f;
                 }
 
-                float max = Mathf.Max(0.01f, tuning.MoveSpeed(combat.Mode));
+                float max = Mathf.Max(
+                    0.01f,
+                    tuning.MoveSpeed(combat.Mode) *
+                    GameDifficulty.Current.PlayerMoveSpeedMultiplier);
                 return Mathf.Clamp01(velocity.magnitude / max);
             }
         }
@@ -110,6 +114,25 @@ namespace ReturnVector.Player
             }
         }
 
+        public void ApplyPush(Vector3 worldDirection, float distance)
+        {
+            if (state == PlayerMovementState.Disabled || distance <= 0f)
+            {
+                return;
+            }
+
+            Vector3 direction = worldDirection;
+            direction.y = 0f;
+
+            if (direction.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+
+            Move(direction.normalized * distance);
+            velocity = Vector3.zero;
+        }
+
         private void Update()
         {
             if (tuning == null || input == null)
@@ -163,7 +186,9 @@ namespace ReturnVector.Player
 
             // Armed state changes movement tuning; input direction itself remains unchanged.
             Vector3 desiredVelocity =
-                move * tuning.MoveSpeed(mode);
+                move *
+                tuning.MoveSpeed(mode) *
+                GameDifficulty.Current.PlayerMoveSpeedMultiplier;
 
             velocity = PlayerMovementMath.StepVelocity(
                 velocity,
@@ -242,8 +267,12 @@ namespace ReturnVector.Player
                 facingDirection);
 
             dodgeElapsed = 0f;
-            dodgeDistance = tuning.DodgeDistance(mode);
-            dodgeCooldownRemaining = tuning.DodgeCooldown(mode);
+            dodgeDistance =
+                tuning.DodgeDistance(mode) *
+                GameDifficulty.Current.DodgeDistanceMultiplier;
+            dodgeCooldownRemaining =
+                tuning.DodgeCooldown(mode) *
+                GameDifficulty.Current.DodgeCooldownMultiplier;
             dodgeBufferRemaining = 0f;
             velocity = Vector3.zero;
             facingDirection = dodgeDirection;

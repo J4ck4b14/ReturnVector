@@ -15,6 +15,7 @@ namespace ReturnVector.Weapon
     {
         private const int HitBufferSize = 32;
         private const int CurvatureBufferSize = 16;
+        private const int OverlapBufferSize = 24;
 
         [SerializeField] private WeaponController weapon;
         [SerializeField] private WeaponThrowTuning tuning;
@@ -22,6 +23,7 @@ namespace ReturnVector.Weapon
 
         private readonly RaycastHit[] hitBuffer = new RaycastHit[HitBufferSize];
         private readonly Collider[] curvatureBuffer = new Collider[CurvatureBufferSize];
+        private readonly Collider[] overlapBuffer = new Collider[OverlapBufferSize];
         private readonly HashSet<int> damagedColliderIds = new HashSet<int>();
         private readonly HashSet<int> passedSurfaceColliderIds = new HashSet<int>();
 
@@ -32,6 +34,7 @@ namespace ReturnVector.Weapon
         private float accumulator;
         private float localImpactPause;
         private bool active;
+        private Vector3 lastSafePosition;
 
         public bool IsActive => active;
         public Vector3 Direction => direction;
@@ -80,6 +83,7 @@ namespace ReturnVector.Weapon
             passedSurfaceColliderIds.Clear();
             LastSurfaceResponse = null;
             active = true;
+            lastSafePosition = transform.position;
 
             transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
             return true;
@@ -189,6 +193,20 @@ namespace ReturnVector.Weapon
 
         private void SimulateStep(float deltaTime)
         {
+            if (WeaponCollisionUtility.HasBlockingOverlap(
+                    transform.position,
+                    tuning.CollisionRadius,
+                    tuning.CollisionMask,
+                    AttackPhase.Outbound,
+                    overlapBuffer,
+                    transform,
+                    weapon.Owner))
+            {
+                transform.position = lastSafePosition;
+                ParkAtCurrentPosition(embedded: true);
+                return;
+            }
+
             // Curvature fields steer the travel direction before this step is swept for collisions.
             direction = WeaponCurvatureUtility.ApplyAtPosition(
                 transform.position,
@@ -306,9 +324,9 @@ namespace ReturnVector.Weapon
 
                     if (result.BlocksWeapon)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
                         blockingHit = hit;
                         foundBlockingHit = true;
                         blockingImpactAlreadyReported = true;
@@ -317,9 +335,9 @@ namespace ReturnVector.Weapon
 
                     if (result.DeflectsWeapon)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
 
                         Vector3 reflectedDirection =
                             Vector3.Reflect(
@@ -361,9 +379,9 @@ namespace ReturnVector.Weapon
                     if (result.DamagedTarget &&
                         tuning.EnemyImpactPauseSeconds > 0f)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
 
                         localImpactPause =
                             tuning.EnemyImpactPauseSeconds;
@@ -403,9 +421,9 @@ namespace ReturnVector.Weapon
 
                         if (tuning.EnemyImpactPauseSeconds > 0f)
                         {
-                            actualTravel = Mathf.Max(
-                                0f,
-                                hit.distance - tuning.SurfaceBackoff);
+                            actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
 
                             localImpactPause =
                                 tuning.EnemyImpactPauseSeconds;
@@ -429,9 +447,9 @@ namespace ReturnVector.Weapon
 
                     if (response.Blocks)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
                         blockingHit = hit;
                         foundBlockingHit = true;
 
@@ -445,9 +463,9 @@ namespace ReturnVector.Weapon
 
                     if (response.Kind == WeaponSurfaceKind.Reflective)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
 
                         reflected = true;
                         reflectionHit = hit;
@@ -479,9 +497,9 @@ namespace ReturnVector.Weapon
                     continue;
                 }
 
-                actualTravel = Mathf.Max(
-                    0f,
-                    hit.distance - tuning.SurfaceBackoff);
+                actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
                 blockingHit = hit;
                 foundBlockingHit = true;
                 break;
@@ -501,6 +519,22 @@ namespace ReturnVector.Weapon
             }
 
             transform.position = destination;
+
+            if (WeaponCollisionUtility.HasBlockingOverlap(
+                    transform.position,
+                    tuning.CollisionRadius,
+                    tuning.CollisionMask,
+                    AttackPhase.Outbound,
+                    overlapBuffer,
+                    transform,
+                    weapon.Owner))
+            {
+                transform.position = lastSafePosition;
+                ParkAtCurrentPosition(embedded: true);
+                return;
+            }
+
+            lastSafePosition = transform.position;
             travelledDistance += actualTravel;
             remainingDistance = Mathf.Max(
                 0f,
@@ -521,10 +555,24 @@ namespace ReturnVector.Weapon
                         0.001f,
                         tuning.SurfaceBackoff * 2f);
 
-                transform.position +=
+                Vector3 separatedPosition =
+                    transform.position +
                     direction * separation;
 
-                travelledDistance += separation;
+                if (!WeaponCollisionUtility.HasBlockingOverlap(
+                        separatedPosition,
+                        tuning.CollisionRadius,
+                        tuning.CollisionMask,
+                        AttackPhase.Outbound,
+                        overlapBuffer,
+                        transform,
+                        weapon.Owner))
+                {
+                    transform.position = separatedPosition;
+                    lastSafePosition = transform.position;
+                    travelledDistance += separation;
+                }
+
                 remainingDistance = Mathf.Max(
                     0f,
                     remainingDistance - separation);
@@ -593,8 +641,22 @@ namespace ReturnVector.Weapon
                 float separation = Mathf.Max(
                     0.001f,
                     tuning.SurfaceBackoff * 2f);
-                transform.position += direction * separation;
-                travelledDistance += separation;
+                Vector3 separatedPosition =
+                    transform.position + direction * separation;
+
+                if (!WeaponCollisionUtility.HasBlockingOverlap(
+                        separatedPosition,
+                        tuning.CollisionRadius,
+                        tuning.CollisionMask,
+                        AttackPhase.Outbound,
+                        overlapBuffer,
+                        transform,
+                        weapon.Owner))
+                {
+                    transform.position = separatedPosition;
+                    lastSafePosition = transform.position;
+                    travelledDistance += separation;
+                }
                 remainingDistance = Mathf.Max(
                     0f,
                     remainingDistance - separation);

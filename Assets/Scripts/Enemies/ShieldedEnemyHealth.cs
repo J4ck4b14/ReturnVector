@@ -1,5 +1,6 @@
 using System;
 using ReturnVector.Combat;
+using ReturnVector.Core;
 using UnityEngine;
 
 namespace ReturnVector.Enemies
@@ -10,6 +11,7 @@ namespace ReturnVector.Enemies
         [SerializeField, Range(-1f, 1f)] private float frontalDotThreshold = 0.25f;
         [SerializeField, Min(1f)] private float rearRecallMultiplier = 1.6f;
         [SerializeField, Min(0f)] private float shieldDeflectionDegrees = 24f;
+        private bool shieldActive = true;
 
         public event Action<DamageInfo> ShieldBlocked;
         public event Action<DamageInfo> RearRecallPunished;
@@ -27,6 +29,12 @@ namespace ReturnVector.Enemies
                 Mathf.Max(1f, recallMultiplier);
             shieldDeflectionDegrees =
                 Mathf.Max(0f, deflectionDegrees);
+            shieldActive = true;
+        }
+
+        public void SetShieldActive(bool active)
+        {
+            shieldActive = active;
         }
 
         public override WeaponHitResult ResolveWeaponHit(
@@ -35,6 +43,11 @@ namespace ReturnVector.Enemies
             if (!CanReceiveDamage)
             {
                 return new WeaponHitResult(false, false);
+            }
+
+            if (!shieldActive)
+            {
+                return base.ResolveWeaponHit(in damage);
             }
 
             bool fromFront =
@@ -51,7 +64,28 @@ namespace ReturnVector.Enemies
                         shieldDeflectionDegrees);
                 }
 
-                // Frontal recall is treated as shield contact; rear recall carries the damage bonus.
+                float assistedRecall =
+                    GameDifficulty.ShieldFrontRecallDamageMultiplier;
+
+                if (damage.Phase == AttackPhase.Recall &&
+                    assistedRecall > 0f)
+                {
+                    DamageInfo softened =
+                        new DamageInfo(
+                            damage.Amount * assistedRecall,
+                            damage.Point,
+                            damage.Direction,
+                            damage.Instigator,
+                            damage.Source,
+                            damage.Phase);
+
+                    bool assistedDamaged = ApplyDamage(in softened);
+                    return assistedDamaged
+                        ? WeaponHitResult.DamageAndPierce
+                        : new WeaponHitResult(false, false);
+                }
+
+                // Normal and Hard keep the full directional shield requirement.
                 return new WeaponHitResult(false, false);
             }
 

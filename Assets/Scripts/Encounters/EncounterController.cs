@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ReturnVector.Core;
 using ReturnVector.Enemies;
 using UnityEngine;
 
@@ -39,6 +40,8 @@ namespace ReturnVector.Encounters
                 : 0;
         public int LiveEnemyCount => liveEnemyCount;
         public float PhaseElapsed => Mathf.Max(0f, phaseElapsed);
+        public EncounterGate EntranceGate => entranceGate;
+        public EncounterGate ExitGate => exitGate;
 
         public string CurrentPhaseLabel
         {
@@ -222,8 +225,33 @@ namespace ReturnVector.Encounters
                 }
 
                 spawnedEntries[i] = true;
+
+                if (!GameDifficulty.ShouldSpawnEntry(
+                        i,
+                        spawns.Length,
+                        entry.Archetype))
+                {
+                    continue;
+                }
+
                 Spawn(entry);
             }
+        }
+
+        public void RegisterRuntimeEnemy(
+            EnemyHealth enemy)
+        {
+            if (enemy == null ||
+                spawnedEnemies.Contains(enemy))
+            {
+                return;
+            }
+
+            spawnedEnemies.Add(enemy);
+            liveEnemyCount++;
+
+            enemy.Died += HandleEnemyDeath;
+            EnemySpawned?.Invoke(this, enemy);
         }
 
         private void Spawn(

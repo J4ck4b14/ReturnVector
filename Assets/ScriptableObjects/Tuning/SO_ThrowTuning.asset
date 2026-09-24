@@ -17,7 +17,7 @@ MonoBehaviour:
   OutboundSpeed: 26
   MaxDistance: 18
   CollisionRadius: 0.12
-  SurfaceBackoff: 0.005
+  SurfaceBackoff: 0.015
   CollisionMask:
     serializedVersion: 2
     m_Bits: 4294967295

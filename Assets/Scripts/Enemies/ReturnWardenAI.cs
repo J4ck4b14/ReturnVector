@@ -1,4 +1,7 @@
+using System;
 using ReturnVector.Combat;
+using ReturnVector.Core;
+using ReturnVector.GameFeel;
 using ReturnVector.Player;
 using ReturnVector.Weapon;
 using UnityEngine;
@@ -6,30 +9,66 @@ using UnityEngine;
 namespace ReturnVector.Enemies
 {
     /// <summary>
-    /// Boss behaviour built around weapon pinning, reposition pressure and a telegraphed slam.
+    /// Return Warden behaviour. Distance and phase select its telegraphed attack vocabulary.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ReturnWardenAI : MonoBehaviour
+    public sealed class ReturnWardenAI : MonoBehaviour, IEnemyAttackSource
     {
         [SerializeField] private EnemyMotor motor;
         [SerializeField] private ReturnWardenHealth health;
         [SerializeField] private ReturnWardenTuning tuning;
         [SerializeField] private Transform player;
         [SerializeField] private PlayerHealth playerHealth;
+        [SerializeField] private PlayerMov playerMovement;
         [SerializeField] private WeaponRecallConstraint recallConstraint;
 
         private ReturnWardenState state;
+        private ReturnWardenAttackKind currentAttack;
         private float stateTimer;
-        private float slamCooldown;
+        private float stateDuration;
+        private float attackCooldown;
+        private int attackSerial;
+        private int transitionTargetPhase;
+
+        private Vector3 attackDirection = Vector3.forward;
+        private float chargeRemainingDistance;
+        private bool chargeHitPlayer;
 
         public ReturnWardenState State => state;
-        public bool IsTelegraphing =>
-            state == ReturnWardenState.SlamWindup;
-        public bool IsPhaseTwo =>
-            health != null && health.IsPhaseTwo;
+        public ReturnWardenAttackKind CurrentAttack => currentAttack;
+        public bool IsPhaseTwo => health != null && health.IsPhaseTwo;
+        public bool IsPhaseThree => health != null && health.IsPhaseThree;
         public bool IsPressuringPinnedWeapon =>
-            recallConstraint != null &&
-            recallConstraint.IsPinned;
+            recallConstraint != null && recallConstraint.IsPinned;
+
+        public EnemyAttackStage AttackStage =>
+            state == ReturnWardenState.Windup
+                ? EnemyAttackStage.Windup
+                : state == ReturnWardenState.Active
+                    ? EnemyAttackStage.Active
+                    : state == ReturnWardenState.Recovery
+                        ? EnemyAttackStage.Recovery
+                        : EnemyAttackStage.None;
+
+        public EnemyAttackStyle AttackStyle =>
+            currentAttack == ReturnWardenAttackKind.Charge
+                ? EnemyAttackStyle.BossCharge
+                : currentAttack == ReturnWardenAttackKind.Shockwave
+                    ? EnemyAttackStyle.BossShockwave
+                    : EnemyAttackStyle.BossSlam;
+
+        public float AttackProgress =>
+            stateDuration <= 0.0001f
+                ? 0f
+                : Mathf.Clamp01(1f - stateTimer / stateDuration);
+
+        public Vector3 AttackDirection => attackDirection;
+
+        public event Action PhaseTransitionStarted;
+        public event Action PhaseTransitionCompleted;
+        public event Action PhaseThreeTransitionStarted;
+        public event Action PhaseThreeTransitionCompleted;
+        public event Action ShockwaveReleased;
 
         public void Configure(
             EnemyMotor newMotor,
@@ -39,38 +78,58 @@ namespace ReturnVector.Enemies
             PlayerHealth newPlayerHealth,
             WeaponRecallConstraint newRecallConstraint)
         {
+            UnsubscribeFromHealth();
+
             motor = newMotor;
             health = newHealth;
             tuning = newTuning;
             player = newPlayer;
             playerHealth = newPlayerHealth;
+            playerMovement =
+                newPlayer != null
+                    ? newPlayer.GetComponentInParent<PlayerMov>()
+                    : null;
             recallConstraint = newRecallConstraint;
 
             state = ReturnWardenState.Pursuit;
+            currentAttack = ReturnWardenAttackKind.None;
             stateTimer = 0f;
-            slamCooldown = 0.4f;
+            stateDuration = 0f;
+            attackCooldown = 0.4f;
+            attackSerial = 0;
+            transitionTargetPhase = 0;
+
+            SubscribeToHealth();
+        }
+
+        private void OnEnable()
+        {
+            SubscribeToHealth();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromHealth();
         }
 
         private void Update()
         {
-            if (health == null ||
-                !health.CanReceiveDamage)
+            if (health == null || !health.CanReceiveDamage)
             {
                 state = ReturnWardenState.Dead;
+                currentAttack = ReturnWardenAttackKind.None;
                 motor?.Stop();
                 recallConstraint?.Release();
                 return;
             }
 
-            if (player == null ||
-                tuning == null)
+            if (player == null || tuning == null)
             {
                 return;
             }
 
             float dt = Time.deltaTime;
-            slamCooldown =
-                Mathf.Max(0f, slamCooldown - dt);
+            attackCooldown = Mathf.Max(0f, attackCooldown - dt);
 
             switch (state)
             {
@@ -78,12 +137,20 @@ namespace ReturnVector.Enemies
                     TickPursuit(dt);
                     break;
 
-                case ReturnWardenState.SlamWindup:
-                    TickSlamWindup(dt);
+                case ReturnWardenState.Windup:
+                    TickWindup(dt);
                     break;
 
-                case ReturnWardenState.SlamRecovery:
-                    TickSlamRecovery(dt);
+                case ReturnWardenState.Active:
+                    TickActive(dt);
+                    break;
+
+                case ReturnWardenState.Recovery:
+                    TickRecovery(dt);
+                    break;
+
+                case ReturnWardenState.Transforming:
+                    TickTransformation(dt);
                     break;
             }
         }
@@ -95,11 +162,22 @@ namespace ReturnVector.Enemies
                     transform.position,
                     player.position);
 
+            if (attackCooldown <= 0f)
+            {
+                ReturnWardenAttackKind next =
+                    ChooseAttack(distance);
+
+                if (next != ReturnWardenAttackKind.None)
+                {
+                    BeginAttack(next);
+                    return;
+                }
+            }
+
             bool pinned =
                 recallConstraint != null &&
                 recallConstraint.IsPinned;
 
-            // Pin pressure increases pursuit speed while the player creates release distance.
             float speed =
                 pinned
                     ? tuning.PinnedPressureSpeed
@@ -107,25 +185,17 @@ namespace ReturnVector.Enemies
 
             if (health.IsPhaseTwo)
             {
-                speed *=
-                    tuning.PhaseTwoSpeedMultiplier;
+                speed *= tuning.PhaseTwoSpeedMultiplier;
             }
-
-            if (distance <= tuning.SlamRange &&
-                slamCooldown <= 0f)
+            else if (health.IsPhaseThree)
             {
-                // Slam resolves from the player's position after the telegraph window.
-                state =
-                    ReturnWardenState.SlamWindup;
-
-                stateTimer =
-                    health.IsPhaseTwo
-                        ? tuning.PhaseTwoWindup
-                        : tuning.SlamWindup;
-
-                motor?.Stop();
-                return;
+                speed *=
+                    tuning.PhaseTwoSpeedMultiplier *
+                    tuning.PhaseThreeSpeedMultiplier;
             }
+
+            speed *=
+                GameDifficulty.Current.EnemyMoveSpeedMultiplier;
 
             motor?.MoveToward(
                 player.position,
@@ -134,14 +204,207 @@ namespace ReturnVector.Enemies
                 tuning.PreferredDistance);
         }
 
-        private void TickSlamWindup(
-            float deltaTime)
+        private ReturnWardenAttackKind ChooseAttack(float distance)
+        {
+            bool advancedPhase =
+                health.IsPhaseTwo ||
+                health.IsPhaseThree;
+
+            int shockwaveStride =
+                health.IsPhaseThree
+                    ? 2
+                    : 3;
+
+            if (advancedPhase &&
+                attackSerial > 0 &&
+                attackSerial % shockwaveStride == shockwaveStride - 1 &&
+                distance <= tuning.ShockwaveRange)
+            {
+                return ReturnWardenAttackKind.Shockwave;
+            }
+
+            if (distance <= tuning.SlamRange)
+            {
+                return ReturnWardenAttackKind.Slam;
+            }
+
+            if (distance <= tuning.ChargeTriggerRange)
+            {
+                return ReturnWardenAttackKind.Charge;
+            }
+
+            return ReturnWardenAttackKind.None;
+        }
+
+        private void BeginAttack(ReturnWardenAttackKind attack)
+        {
+            currentAttack = attack;
+            attackDirection = FlatDirectionToPlayer();
+            state = ReturnWardenState.Windup;
+            motor?.Stop();
+
+            switch (attack)
+            {
+                case ReturnWardenAttackKind.Slam:
+                    stateDuration =
+                        health.CurrentPhase >= 2
+                            ? tuning.PhaseTwoSlamWindup
+                            : tuning.SlamWindup;
+                    break;
+
+                case ReturnWardenAttackKind.Charge:
+                    stateDuration =
+                        health.CurrentPhase >= 2
+                            ? tuning.PhaseTwoChargeWindup
+                            : tuning.ChargeWindup;
+                    break;
+
+                case ReturnWardenAttackKind.Shockwave:
+                    stateDuration = tuning.ShockwaveWindup;
+                    break;
+            }
+
+            if (health.IsPhaseThree)
+            {
+                stateDuration *= 0.86f;
+            }
+
+            stateDuration *=
+                GameDifficulty.Current.EnemyWindupMultiplier;
+
+            stateTimer = stateDuration;
+        }
+
+        private void TickWindup(float deltaTime)
         {
             motor?.Stop();
-            motor?.FaceTarget(
-                player.position,
+
+            if (currentAttack != ReturnWardenAttackKind.Charge)
+            {
+                motor?.FaceTarget(player.position, deltaTime);
+                attackDirection = FlatDirectionToPlayer();
+            }
+            else
+            {
+                Vector3 lookPoint =
+                    transform.position +
+                    attackDirection * 4f;
+
+                motor?.FaceTarget(
+                    lookPoint,
+                    deltaTime);
+            }
+
+            stateTimer -= deltaTime;
+            if (stateTimer <= 0f)
+            {
+                ResolveOrEnterActiveAttack();
+            }
+        }
+
+        private void ResolveOrEnterActiveAttack()
+        {
+            attackSerial++;
+
+            switch (currentAttack)
+            {
+                case ReturnWardenAttackKind.Slam:
+                    ResolveSlam();
+                    BeginRecovery(
+                        tuning.SlamRecovery,
+                        tuning.SlamCooldown);
+                    break;
+
+                case ReturnWardenAttackKind.Charge:
+                    state = ReturnWardenState.Active;
+                    chargeRemainingDistance = tuning.ChargeDistance;
+                    chargeHitPlayer = false;
+
+                    float chargeSpeed = CurrentChargeSpeed;
+                    stateDuration =
+                        chargeSpeed > 0.0001f
+                            ? tuning.ChargeDistance / chargeSpeed
+                            : 0.01f;
+
+                    stateTimer = stateDuration;
+                    break;
+
+                case ReturnWardenAttackKind.Shockwave:
+                    ResolveShockwave();
+                    BeginRecovery(
+                        tuning.ShockwaveRecovery,
+                        tuning.ShockwaveCooldown);
+                    break;
+            }
+        }
+
+        private void TickActive(float deltaTime)
+        {
+            if (currentAttack != ReturnWardenAttackKind.Charge)
+            {
+                BeginRecovery(0.2f, 0.5f);
+                return;
+            }
+
+            float travel =
+                Mathf.Min(
+                    chargeRemainingDistance,
+                    CurrentChargeSpeed * deltaTime);
+
+            float effectiveSpeed =
+                deltaTime > 0.0001f
+                    ? travel / deltaTime
+                    : 0f;
+
+            motor?.MoveDirection(
+                attackDirection,
+                effectiveSpeed,
                 deltaTime);
 
+            chargeRemainingDistance =
+                Mathf.Max(
+                    0f,
+                    chargeRemainingDistance - travel);
+
+            stateTimer -= deltaTime;
+
+            if (!chargeHitPlayer &&
+                FlatDistance(
+                    transform.position,
+                    player.position) <=
+                tuning.ChargeHitRadius)
+            {
+                chargeHitPlayer = true;
+                DamagePlayer(
+                    tuning.ChargeDamage,
+                    attackDirection);
+            }
+
+            if (chargeRemainingDistance <= 0f ||
+                stateTimer <= 0f)
+            {
+                BeginRecovery(
+                    tuning.ChargeRecovery,
+                    tuning.ChargeCooldown);
+            }
+        }
+
+        private void TickRecovery(float deltaTime)
+        {
+            motor?.Stop();
+            stateTimer -= deltaTime;
+
+            if (stateTimer <= 0f)
+            {
+                state = ReturnWardenState.Pursuit;
+                currentAttack = ReturnWardenAttackKind.None;
+                stateDuration = 0f;
+            }
+        }
+
+        private void TickTransformation(float deltaTime)
+        {
+            motor?.Stop();
             stateTimer -= deltaTime;
 
             if (stateTimer > 0f)
@@ -149,36 +412,114 @@ namespace ReturnVector.Enemies
                 return;
             }
 
-            ResolveSlam();
+            health?.CompletePhaseTransition();
+            state = ReturnWardenState.Pursuit;
+            currentAttack = ReturnWardenAttackKind.None;
+            stateDuration = 0f;
+            attackCooldown =
+                transitionTargetPhase == 3
+                    ? 0.55f
+                    : 0.12f;
 
-            state =
-                ReturnWardenState.SlamRecovery;
+            if (transitionTargetPhase == 3)
+            {
+                PhaseThreeTransitionCompleted?.Invoke();
+            }
+            else
+            {
+                PhaseTransitionCompleted?.Invoke();
+            }
 
-            stateTimer =
-                tuning.SlamRecovery;
-
-            slamCooldown =
-                tuning.SlamCooldown;
+            transitionTargetPhase = 0;
         }
 
-        private void TickSlamRecovery(
-            float deltaTime)
+        private void BeginRecovery(
+            float recovery,
+            float cooldown)
         {
-            motor?.Stop();
-            motor?.FaceTarget(
-                player.position,
-                deltaTime);
+            float recoveryMultiplier = 1f;
+            float cooldownMultiplier = 1f;
 
-            stateTimer -= deltaTime;
-
-            if (stateTimer <= 0f)
+            if (health.IsPhaseThree)
             {
-                state =
-                    ReturnWardenState.Pursuit;
+                recoveryMultiplier =
+                    tuning.PhaseTwoRecoveryMultiplier *
+                    tuning.PhaseThreeRecoveryMultiplier;
+
+                cooldownMultiplier =
+                    tuning.PhaseTwoCooldownMultiplier *
+                    tuning.PhaseThreeCooldownMultiplier;
             }
+            else if (health.IsPhaseTwo)
+            {
+                recoveryMultiplier =
+                    tuning.PhaseTwoRecoveryMultiplier;
+
+                cooldownMultiplier =
+                    tuning.PhaseTwoCooldownMultiplier;
+            }
+
+            state = ReturnWardenState.Recovery;
+            GameDifficulty.Profile difficulty = GameDifficulty.Current;
+
+            stateDuration =
+                Mathf.Max(
+                    0.01f,
+                    recovery *
+                    recoveryMultiplier *
+                    difficulty.EnemyRecoveryMultiplier);
+
+            stateTimer = stateDuration;
+            attackCooldown =
+                Mathf.Max(
+                    0f,
+                    cooldown *
+                    cooldownMultiplier *
+                    difficulty.EnemyCooldownMultiplier);
+
+            motor?.Stop();
         }
 
         private void ResolveSlam()
+        {
+            if (FlatDistance(
+                    transform.position,
+                    player.position) <=
+                tuning.SlamRange * 1.08f)
+            {
+                DamagePlayer(
+                    tuning.SlamDamage,
+                    attackDirection);
+            }
+        }
+
+        private void ResolveShockwave()
+        {
+            ShockwaveReleased?.Invoke();
+
+            if (FlatDistance(
+                    transform.position,
+                    player.position) >
+                tuning.ShockwaveRange)
+            {
+                return;
+            }
+
+            Vector3 direction =
+                FlatDirectionToPlayer();
+
+            DamagePlayer(
+                tuning.ShockwaveDamage,
+                direction);
+
+            playerMovement?.ApplyPush(
+                direction,
+                tuning.ShockwavePushDistance);
+        }
+
+        private void DamagePlayer(
+            float amount,
+            Vector3 direction)
         {
             if (playerHealth == null ||
                 !playerHealth.CanReceiveDamage)
@@ -186,36 +527,140 @@ namespace ReturnVector.Enemies
                 return;
             }
 
-            float distance =
-                FlatDistance(
-                    transform.position,
-                    player.position);
+            float multiplier =
+                health != null && health.IsPhaseThree
+                    ? tuning.PhaseThreeDamageMultiplier
+                    : health != null && health.IsPhaseTwo
+                        ? tuning.PhaseTwoDamageMultiplier
+                        : 1f;
 
-            if (distance >
-                tuning.SlamRange * 1.08f)
+            DamageInfo damage =
+                new DamageInfo(
+                    amount *
+                    multiplier *
+                    GameDifficulty.Current.EnemyDamageMultiplier,
+                    player.position,
+                    direction,
+                    gameObject,
+                    gameObject,
+                    AttackPhase.Unknown);
+
+            playerHealth.ReceiveDamage(in damage);
+        }
+
+        private void HandlePhaseTwoStarted()
+        {
+            BeginTransformation(
+                2,
+                tuning != null
+                    ? tuning.PhaseTransitionDuration
+                    : 2.35f);
+
+            PhaseTransitionStarted?.Invoke();
+        }
+
+        private void HandlePhaseThreeStarted()
+        {
+            BeginTransformation(
+                3,
+                tuning != null
+                    ? tuning.PhaseThreeTransitionDuration
+                    : 2.65f);
+
+            PhaseThreeTransitionStarted?.Invoke();
+        }
+
+        private void BeginTransformation(
+            int targetPhase,
+            float duration)
+        {
+            transitionTargetPhase = targetPhase;
+            state = ReturnWardenState.Transforming;
+            currentAttack = ReturnWardenAttackKind.None;
+            stateDuration =
+                Mathf.Max(
+                    0.25f,
+                    duration);
+
+            stateTimer = stateDuration;
+            attackCooldown = 0f;
+            motor?.Stop();
+            recallConstraint?.Release();
+        }
+
+        private void SubscribeToHealth()
+        {
+            if (health == null)
             {
                 return;
             }
 
+            health.PhaseTwoStarted -=
+                HandlePhaseTwoStarted;
+
+            health.PhaseTwoStarted +=
+                HandlePhaseTwoStarted;
+
+            health.PhaseThreeStarted -=
+                HandlePhaseThreeStarted;
+
+            health.PhaseThreeStarted +=
+                HandlePhaseThreeStarted;
+        }
+
+        private void UnsubscribeFromHealth()
+        {
+            if (health == null)
+            {
+                return;
+            }
+
+            health.PhaseTwoStarted -=
+                HandlePhaseTwoStarted;
+
+            health.PhaseThreeStarted -=
+                HandlePhaseThreeStarted;
+        }
+
+        private float CurrentChargeSpeed
+        {
+            get
+            {
+                float speed =
+                    tuning.ChargeSpeed;
+
+                if (health != null &&
+                    health.IsPhaseTwo)
+                {
+                    speed *=
+                        tuning.PhaseTwoChargeSpeedMultiplier;
+                }
+                else if (health != null &&
+                         health.IsPhaseThree)
+                {
+                    speed *=
+                        tuning.PhaseTwoChargeSpeedMultiplier *
+                        tuning.PhaseThreeChargeSpeedMultiplier;
+                }
+
+                return
+                    speed *
+                    GameDifficulty.Current.EnemyMoveSpeedMultiplier;
+            }
+        }
+
+        private Vector3 FlatDirectionToPlayer()
+        {
             Vector3 direction =
                 player.position -
                 transform.position;
 
             direction.y = 0f;
 
-            DamageInfo damage =
-                new DamageInfo(
-                    tuning.SlamDamage,
-                    player.position,
-                    direction.sqrMagnitude > 0.0001f
-                        ? direction.normalized
-                        : transform.forward,
-                    gameObject,
-                    gameObject,
-                    AttackPhase.Unknown);
-
-            playerHealth.ReceiveDamage(
-                in damage);
+            return
+                direction.sqrMagnitude > 0.0001f
+                    ? direction.normalized
+                    : transform.forward;
         }
 
         private static float FlatDistance(
@@ -224,7 +669,6 @@ namespace ReturnVector.Enemies
         {
             a.y = 0f;
             b.y = 0f;
-
             return Vector3.Distance(a, b);
         }
     }

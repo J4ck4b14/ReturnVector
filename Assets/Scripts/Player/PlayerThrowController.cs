@@ -30,6 +30,8 @@ namespace ReturnVector.Player
 
         private void OnEnable()
         {
+            weapon?.ConfigureHeldCollision(tuning);
+
             if (input != null)
             {
                 input.ThrowPressed += HandleThrowPressed;
@@ -61,6 +63,7 @@ namespace ReturnVector.Player
             weapon = newWeapon;
             outboundMotor = newOutboundMotor;
             tuning = newTuning;
+            weapon?.ConfigureHeldCollision(tuning);
 
             if (isActiveAndEnabled && input != null)
             {
@@ -112,6 +115,13 @@ namespace ReturnVector.Player
                 aim == null ||
                 weapon.State != WeaponState.ThrowAnticipation)
             {
+                return;
+            }
+
+            if (!weapon.PrepareOutboundLaunch())
+            {
+                anticipationRemaining = 0f;
+                weapon.ResetToHeld();
                 return;
             }
 

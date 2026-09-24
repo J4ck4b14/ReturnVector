@@ -1,14 +1,16 @@
 using ReturnVector.Combat;
+using ReturnVector.Core;
+using ReturnVector.GameFeel;
 using ReturnVector.Player;
 using UnityEngine;
 
 namespace ReturnVector.Enemies
 {
     /// <summary>
-    /// Closes distance faster while the player is weaponless and resolves a short-range strike.
+    /// Closes distance faster while the player is weaponless and resolves a telegraphed short-range strike.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class RusherEnemyAI : MonoBehaviour
+    public sealed class RusherEnemyAI : MonoBehaviour, IEnemyAttackSource
     {
         [SerializeField] private EnemyMotor motor;
         [SerializeField] private EnemyHealth health;
@@ -18,11 +20,28 @@ namespace ReturnVector.Enemies
 
         private RusherEnemyState state;
         private float stateTimer;
+        private float stateDuration;
+        private Vector3 attackDirection = Vector3.forward;
 
         public RusherEnemyState State => state;
         public bool IsUsingExposedPressure =>
-            tacticalState != null &&
-            tacticalState.IsExposed;
+            tacticalState != null && tacticalState.IsExposed;
+
+        public EnemyAttackStage AttackStage =>
+            state == RusherEnemyState.Windup
+                ? EnemyAttackStage.Windup
+                : state == RusherEnemyState.Recovery
+                    ? EnemyAttackStage.Recovery
+                    : EnemyAttackStage.None;
+
+        public EnemyAttackStyle AttackStyle => EnemyAttackStyle.Melee;
+
+        public float AttackProgress =>
+            stateDuration <= 0.0001f
+                ? 0f
+                : Mathf.Clamp01(1f - stateTimer / stateDuration);
+
+        public Vector3 AttackDirection => attackDirection;
 
         public void Configure(
             EnemyMotor newMotor,
@@ -38,6 +57,7 @@ namespace ReturnVector.Enemies
             tacticalState = newTacticalState;
             state = RusherEnemyState.Pursuit;
             stateTimer = 0f;
+            stateDuration = 0f;
         }
 
         private void Update()
@@ -70,29 +90,30 @@ namespace ReturnVector.Enemies
 
         private void TickPursuit(float deltaTime)
         {
-            // Weapon absence is the Rusher's pressure window.
             bool exposed =
                 tacticalState != null &&
                 tacticalState.IsExposed;
 
+            GameDifficulty.Profile difficulty = GameDifficulty.Current;
             float speed =
-                exposed
+                (exposed
                     ? tuning.ExposedMoveSpeed
-                    : tuning.ArmedMoveSpeed;
+                    : tuning.ArmedMoveSpeed) *
+                difficulty.EnemyMoveSpeedMultiplier;
 
             float distance =
-                FlatDistance(
-                    transform.position,
-                    player.position);
+                FlatDistance(transform.position, player.position);
 
             if (distance <= tuning.AttackRange)
             {
-                // Windup fixes the attack timing while leaving room for the player to move out.
+                attackDirection = FlatDirectionToPlayer();
                 state = RusherEnemyState.Windup;
-                stateTimer =
-                    exposed
+                stateDuration =
+                    (exposed
                         ? tuning.ExposedWindup
-                        : tuning.ArmedWindup;
+                        : tuning.ArmedWindup) *
+                    difficulty.EnemyWindupMultiplier;
+                stateTimer = stateDuration;
                 motor?.Stop();
                 return;
             }
@@ -109,46 +130,20 @@ namespace ReturnVector.Enemies
             motor?.Stop();
             motor?.FaceTarget(player.position, deltaTime);
 
+            attackDirection = FlatDirectionToPlayer();
             stateTimer -= deltaTime;
             if (stateTimer > 0f)
             {
                 return;
             }
 
-            float distance =
-                FlatDistance(
-                    transform.position,
-                    player.position);
-
-            if (distance <= tuning.AttackRange * 1.15f)
-            {
-                PlayerHealth target =
-                    player.GetComponentInParent<PlayerHealth>();
-
-                if (target != null &&
-                    target.CanReceiveDamage)
-                {
-                    Vector3 direction =
-                        player.position - transform.position;
-                    direction.y = 0f;
-
-                    DamageInfo damage =
-                        new DamageInfo(
-                            tuning.AttackDamage,
-                            player.position,
-                            direction.sqrMagnitude > 0.0001f
-                                ? direction.normalized
-                                : transform.forward,
-                            gameObject,
-                            gameObject,
-                            AttackPhase.Unknown);
-
-                    target.ReceiveDamage(in damage);
-                }
-            }
+            ResolveStrike();
 
             state = RusherEnemyState.Recovery;
-            stateTimer = tuning.RecoverySeconds;
+            stateDuration =
+                tuning.RecoverySeconds *
+                GameDifficulty.Current.EnemyRecoveryMultiplier;
+            stateTimer = stateDuration;
         }
 
         private void TickRecovery(float deltaTime)
@@ -160,12 +155,52 @@ namespace ReturnVector.Enemies
             if (stateTimer <= 0f)
             {
                 state = RusherEnemyState.Pursuit;
+                stateDuration = 0f;
             }
         }
 
-        private static float FlatDistance(
-            Vector3 a,
-            Vector3 b)
+        private void ResolveStrike()
+        {
+            float distance =
+                FlatDistance(transform.position, player.position);
+
+            if (distance > tuning.AttackRange * 1.15f)
+            {
+                return;
+            }
+
+            PlayerHealth target =
+                player.GetComponentInParent<PlayerHealth>();
+
+            if (target == null || !target.CanReceiveDamage)
+            {
+                return;
+            }
+
+            DamageInfo damage =
+                new DamageInfo(
+                    tuning.AttackDamage *
+                    GameDifficulty.Current.EnemyDamageMultiplier,
+                    player.position,
+                    attackDirection,
+                    gameObject,
+                    gameObject,
+                    AttackPhase.Unknown);
+
+            target.ReceiveDamage(in damage);
+        }
+
+        private Vector3 FlatDirectionToPlayer()
+        {
+            Vector3 direction = player.position - transform.position;
+            direction.y = 0f;
+
+            return direction.sqrMagnitude > 0.0001f
+                ? direction.normalized
+                : transform.forward;
+        }
+
+        private static float FlatDistance(Vector3 a, Vector3 b)
         {
             a.y = 0f;
             b.y = 0f;

@@ -17,6 +17,22 @@ namespace ReturnVector.Encounters
         private float feedbackZoom;
         private Camera attachedCamera;
         private float baseOrthographicSize;
+        private float targetOrthographicSize;
+
+        private void Awake()
+        {
+            attachedCamera =
+                GetComponent<Camera>();
+
+            if (attachedCamera != null)
+            {
+                baseOrthographicSize =
+                    attachedCamera.orthographicSize;
+
+                targetOrthographicSize =
+                    baseOrthographicSize;
+            }
+        }
 
         public void Configure(
             Transform newTarget,
@@ -34,6 +50,7 @@ namespace ReturnVector.Encounters
             {
                 baseOrthographicSize =
                     attachedCamera.orthographicSize;
+                targetOrthographicSize = baseOrthographicSize;
             }
 
             if (target != null)
@@ -54,6 +71,20 @@ namespace ReturnVector.Encounters
                 orthographicSizeOffset;
         }
 
+        public void SetArenaFraming(
+            float orthographicSize,
+            bool immediate = false)
+        {
+            targetOrthographicSize =
+                Mathf.Max(0.1f, orthographicSize);
+
+            if (immediate)
+            {
+                baseOrthographicSize =
+                    targetOrthographicSize;
+            }
+        }
+
         private void LateUpdate()
         {
             if (target == null)
@@ -65,6 +96,18 @@ namespace ReturnVector.Encounters
                 target.position +
                 worldOffset +
                 feedbackOffset;
+
+            float framingBlend =
+                1f -
+                Mathf.Exp(
+                    -6f *
+                    Time.unscaledDeltaTime);
+
+            baseOrthographicSize =
+                Mathf.Lerp(
+                    baseOrthographicSize,
+                    targetOrthographicSize,
+                    framingBlend);
 
             if (followSharpness <= 0f)
             {

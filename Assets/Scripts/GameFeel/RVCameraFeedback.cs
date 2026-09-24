@@ -41,6 +41,15 @@ namespace ReturnVector.GameFeel
             recallActive = active;
         }
 
+        public void SetArenaFraming(
+            float orthographicSize,
+            bool immediate = false)
+        {
+            follow?.SetArenaFraming(
+                orthographicSize,
+                immediate);
+        }
+
         public void Impulse(
             float amplitude,
             float duration,

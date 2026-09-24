@@ -15,7 +15,7 @@ namespace ReturnVector.Weapon
     {
         private const int HitBufferSize = 32;
         private const int CurvatureBufferSize = 16;
-        private const int OverlapBufferSize = 16;
+        private const int OverlapBufferSize = 24;
 
         [SerializeField] private WeaponController weapon;
         [SerializeField] private WeaponRecallTuning tuning;
@@ -32,6 +32,7 @@ namespace ReturnVector.Weapon
         private float accumulator;
         private float localImpactPause;
         private bool active;
+        private Vector3 lastSafePosition;
 
         private float catchElapsed;
         private Vector3 catchStartPosition;
@@ -116,147 +117,12 @@ namespace ReturnVector.Weapon
             passedSurfaceColliderIds.Clear();
             LastSurfaceResponse = null;
             active = true;
-
-            if (!RecoverInitialWorldOverlap())
-            {
-                Abort();
-                weapon.ResetToHeld();
-                return false;
-            }
+            lastSafePosition = transform.position;
 
             RecallStarted?.Invoke();
             return true;
         }
 
-
-        private bool RecoverInitialWorldOverlap()
-        {
-            float probeRadius =
-                Mathf.Max(
-                    0.01f,
-                    tuning.CollisionRadius * 0.82f);
-
-            Vector3 start = transform.position;
-
-            if (!HasBlockingWorldOverlap(
-                    start,
-                    probeRadius))
-            {
-                return true;
-            }
-
-            Transform target = CatchTarget;
-            Vector3 towardCatch =
-                target != null
-                    ? target.position - start
-                    : -transform.forward;
-
-            towardCatch.y = 0f;
-
-            if (towardCatch.sqrMagnitude < 0.0001f)
-            {
-                towardCatch = Vector3.forward;
-            }
-
-            towardCatch.Normalize();
-
-            Vector3 side =
-                Vector3.Cross(
-                    Vector3.up,
-                    towardCatch).normalized;
-
-            Vector3[] searchDirections =
-            {
-                towardCatch,
-                -towardCatch,
-                side,
-                -side,
-                (towardCatch + side).normalized,
-                (towardCatch - side).normalized,
-                (-towardCatch + side).normalized,
-                (-towardCatch - side).normalized
-            };
-
-            float step =
-                Mathf.Max(
-                    0.04f,
-                    tuning.CollisionRadius * 0.5f);
-
-            for (int ring = 1; ring <= 14; ring++)
-            {
-                float distance = step * ring;
-
-                for (int i = 0;
-                     i < searchDirections.Length;
-                     i++)
-                {
-                    Vector3 candidate =
-                        start +
-                        searchDirections[i] * distance;
-
-                    if (HasBlockingWorldOverlap(
-                            candidate,
-                            probeRadius))
-                    {
-                        continue;
-                    }
-
-                    transform.position = candidate;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool HasBlockingWorldOverlap(
-            Vector3 position,
-            float radius)
-        {
-            int count = Physics.OverlapSphereNonAlloc(
-                position,
-                radius,
-                overlapBuffer,
-                tuning.CollisionMask,
-                QueryTriggerInteraction.Ignore);
-
-            for (int i = 0; i < count; i++)
-            {
-                Collider collider = overlapBuffer[i];
-
-                if (WeaponCollisionUtility.IsOwnedCollider(
-                        collider,
-                        transform,
-                        weapon.Owner))
-                {
-                    continue;
-                }
-
-                if (WeaponCollisionUtility.TryGetWeaponHitReceiver(
-                        collider,
-                        out _) ||
-                    WeaponCollisionUtility.TryGetDamageable(
-                        collider,
-                        out _))
-                {
-                    continue;
-                }
-
-                if (WeaponSurfaceResolver.TryGetProfile(
-                        collider,
-                        out WeaponSurfaceProfile profile) &&
-                    profile.AppliesTo(AttackPhase.Recall) &&
-                    (profile.Kind == WeaponSurfaceKind.Penetrable ||
-                     profile.Kind == WeaponSurfaceKind.Curving))
-                {
-                    continue;
-                }
-
-                return true;
-            }
-
-            return false;
-        }
 
         public bool DeflectToward(
             Vector3 desiredWorldDirection,
@@ -374,6 +240,24 @@ namespace ReturnVector.Weapon
 
         private void SimulateRecallStep(float deltaTime)
         {
+            if (WeaponCollisionUtility.HasBlockingOverlap(
+                    transform.position,
+                    tuning.CollisionRadius,
+                    tuning.CollisionMask,
+                    AttackPhase.Recall,
+                    overlapBuffer,
+                    transform,
+                    weapon.Owner))
+            {
+                transform.position = lastSafePosition;
+                active = false;
+                accumulator = 0f;
+                localImpactPause = 0f;
+                weapon.MarkEmbedded();
+                RecallBlocked?.Invoke();
+                return;
+            }
+
             Transform target = CatchTarget;
             if (target == null)
             {
@@ -386,7 +270,8 @@ namespace ReturnVector.Weapon
             toTarget.y = 0f;
             float distanceToTarget = toTarget.magnitude;
 
-            if (distanceToTarget <= tuning.CatchRadius)
+            if (distanceToTarget <= tuning.CatchRadius &&
+                CanCatchDirectly(target))
             {
                 BeginCatch();
                 return;
@@ -439,7 +324,11 @@ namespace ReturnVector.Weapon
 
             if (requestedTravel <= 0.000001f)
             {
-                BeginCatch();
+                if (CanCatchDirectly(target))
+                {
+                    BeginCatch();
+                }
+
                 return;
             }
 
@@ -530,9 +419,9 @@ namespace ReturnVector.Weapon
 
                     if (result.BlocksWeapon)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
                         blockingHit = hit;
                         foundBlockingHit = true;
                         blockingImpactAlreadyReported = true;
@@ -541,9 +430,9 @@ namespace ReturnVector.Weapon
 
                     if (result.DeflectsWeapon)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
 
                         Vector3 reflectedDirection =
                             Vector3.Reflect(
@@ -585,9 +474,9 @@ namespace ReturnVector.Weapon
                     if (result.DamagedTarget &&
                         tuning.EnemyImpactPauseSeconds > 0f)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
 
                         localImpactPause =
                             tuning.EnemyImpactPauseSeconds;
@@ -627,9 +516,9 @@ namespace ReturnVector.Weapon
 
                         if (tuning.EnemyImpactPauseSeconds > 0f)
                         {
-                            actualTravel = Mathf.Max(
-                                0f,
-                                hit.distance - tuning.SurfaceBackoff);
+                            actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
 
                             localImpactPause =
                                 tuning.EnemyImpactPauseSeconds;
@@ -653,9 +542,9 @@ namespace ReturnVector.Weapon
 
                     if (response.Blocks)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
                         blockingHit = hit;
                         foundBlockingHit = true;
 
@@ -670,9 +559,9 @@ namespace ReturnVector.Weapon
                     if (response.Kind ==
                         WeaponSurfaceKind.Reflective)
                     {
-                        actualTravel = Mathf.Max(
-                            0f,
-                            hit.distance - tuning.SurfaceBackoff);
+                        actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
 
                         reflected = true;
                         reflectionHit = hit;
@@ -702,9 +591,9 @@ namespace ReturnVector.Weapon
                     continue;
                 }
 
-                actualTravel = Mathf.Max(
-                    0f,
-                    hit.distance - tuning.SurfaceBackoff);
+                actualTravel = WeaponCollisionUtility.StopDistance(
+                            hit.distance,
+                            tuning.SurfaceBackoff);
                 blockingHit = hit;
                 foundBlockingHit = true;
                 break;
@@ -726,6 +615,26 @@ namespace ReturnVector.Weapon
 
             transform.position = destination;
 
+            if (WeaponCollisionUtility.HasBlockingOverlap(
+                    transform.position,
+                    tuning.CollisionRadius,
+                    tuning.CollisionMask,
+                    AttackPhase.Recall,
+                    overlapBuffer,
+                    transform,
+                    weapon.Owner))
+            {
+                transform.position = lastSafePosition;
+                active = false;
+                accumulator = 0f;
+                localImpactPause = 0f;
+                weapon.MarkEmbedded();
+                RecallBlocked?.Invoke();
+                return;
+            }
+
+            lastSafePosition = transform.position;
+
             if (targetDeflected)
             {
                 direction = targetDeflectionDirection;
@@ -740,8 +649,22 @@ namespace ReturnVector.Weapon
                         0.001f,
                         tuning.SurfaceBackoff * 2f);
 
-                transform.position +=
+                Vector3 separatedPosition =
+                    transform.position +
                     direction * separation;
+
+                if (!WeaponCollisionUtility.HasBlockingOverlap(
+                        separatedPosition,
+                        tuning.CollisionRadius,
+                        tuning.CollisionMask,
+                        AttackPhase.Recall,
+                        overlapBuffer,
+                        transform,
+                        weapon.Owner))
+                {
+                    transform.position = separatedPosition;
+                    lastSafePosition = transform.position;
+                }
 
                 transform.rotation =
                     Quaternion.LookRotation(
@@ -753,14 +676,6 @@ namespace ReturnVector.Weapon
 
             if (foundBlockingHit)
             {
-                transform.position =
-                    WeaponCollisionUtility.SurfaceRestPosition(
-                        blockingHit.point,
-                        blockingHit.normal,
-                        tuning.CollisionRadius,
-                        tuning.SurfaceBackoff,
-                        transform.position);
-
                 DrawNormal(blockingHit, 0.8f, 0.2f);
 
                 if (!blockingImpactAlreadyReported)
@@ -784,14 +699,6 @@ namespace ReturnVector.Weapon
 
             if (reflected)
             {
-                transform.position =
-                    WeaponCollisionUtility.SurfaceRestPosition(
-                        reflectionHit.point,
-                        reflectionHit.normal,
-                        tuning.CollisionRadius,
-                        tuning.SurfaceBackoff,
-                        transform.position);
-
                 direction =
                     reflectionResponse.OutgoingDirection;
                 speed *= reflectionResponse.SpeedRetention;
@@ -825,8 +732,22 @@ namespace ReturnVector.Weapon
                 float separation = Mathf.Max(
                     0.001f,
                     tuning.SurfaceBackoff * 2f);
-                transform.position +=
+                Vector3 separatedPosition =
+                    transform.position +
                     direction * separation;
+
+                if (!WeaponCollisionUtility.HasBlockingOverlap(
+                        separatedPosition,
+                        tuning.CollisionRadius,
+                        tuning.CollisionMask,
+                        AttackPhase.Recall,
+                        overlapBuffer,
+                        transform,
+                        weapon.Owner))
+                {
+                    transform.position = separatedPosition;
+                    lastSafePosition = transform.position;
+                }
 
                 if (direction.sqrMagnitude > 0.0001f)
                 {
@@ -857,10 +778,31 @@ namespace ReturnVector.Weapon
                 Vector3.Distance(
                     transform.position,
                     liveTarget.position) <=
-                tuning.CatchRadius)
+                tuning.CatchRadius &&
+                CanCatchDirectly(liveTarget))
             {
                 BeginCatch();
             }
+        }
+
+        private bool CanCatchDirectly(Transform target)
+        {
+            if (target == null ||
+                weapon == null ||
+                tuning == null)
+            {
+                return false;
+            }
+
+            return !WeaponCollisionUtility.HasBlockingPath(
+                transform.position,
+                target.position,
+                tuning.CollisionRadius,
+                tuning.CollisionMask,
+                AttackPhase.Recall,
+                hitBuffer,
+                transform,
+                weapon.Owner);
         }
 
         private void EmitSurfaceInteraction(

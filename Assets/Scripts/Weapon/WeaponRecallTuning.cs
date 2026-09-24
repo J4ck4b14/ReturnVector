@@ -20,7 +20,7 @@ namespace ReturnVector.Weapon
 
         [Header("Collision")]
         [Min(0.001f)] public float CollisionRadius = 0.12f;
-        [Min(0f)] public float SurfaceBackoff = 0.005f;
+        [Min(0f)] public float SurfaceBackoff = 0.015f;
         public LayerMask CollisionMask = ~0;
         [Min(0f)] public float EnemyImpactPauseSeconds = 0.018f;
 
@@ -56,7 +56,7 @@ namespace ReturnVector.Weapon
             NearCatchTurnMultiplier = 1.75f;
             NearCatchDistance = 3f;
             CollisionRadius = 0.12f;
-            SurfaceBackoff = 0.005f;
+            SurfaceBackoff = 0.015f;
             CollisionMask = ~0;
             EnemyImpactPauseSeconds = 0.018f;
             RecallDamage = 1.25f;

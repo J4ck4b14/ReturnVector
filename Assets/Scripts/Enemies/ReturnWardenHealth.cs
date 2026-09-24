@@ -1,11 +1,13 @@
+using System;
 using ReturnVector.Combat;
+using ReturnVector.Core;
 using ReturnVector.Weapon;
 using UnityEngine;
 
 namespace ReturnVector.Enemies
 {
     /// <summary>
-    /// Return Warden hit rules: weak outbound damage, pin activation and amplified recall damage.
+    /// Return Warden hit rules, phase thresholds and recall relationship.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ReturnWardenHealth : EnemyHealth
@@ -13,14 +15,47 @@ namespace ReturnVector.Enemies
         [SerializeField] private ReturnWardenTuning tuning;
         [SerializeField] private WeaponRecallConstraint recallConstraint;
 
+        private bool phaseTwoStarted;
+        private bool phaseThreeStarted;
+        private int transitionTargetPhase;
+
+        public static ReturnWardenHealth Active { get; private set; }
+
         public float HealthRatio =>
             MaxHealth <= 0f
                 ? 0f
                 : CurrentHealth / MaxHealth;
 
         public bool IsPhaseTwo =>
-            tuning != null &&
-            HealthRatio <= tuning.PhaseTwoHealthRatio;
+            phaseTwoStarted &&
+            !phaseThreeStarted;
+
+        public bool IsPhaseThree => phaseThreeStarted;
+        public bool IsTransitioning { get; private set; }
+        public int TransitionTargetPhase => transitionTargetPhase;
+
+        public int CurrentPhase =>
+            phaseThreeStarted
+                ? 3
+                : phaseTwoStarted
+                    ? 2
+                    : 1;
+
+        public event Action PhaseTwoStarted;
+        public event Action PhaseThreeStarted;
+
+        private void OnEnable()
+        {
+            Active = this;
+        }
+
+        private void OnDisable()
+        {
+            if (Active == this)
+            {
+                Active = null;
+            }
+        }
 
         public void ConfigureBoss(
             ReturnWardenTuning newTuning,
@@ -28,11 +63,21 @@ namespace ReturnVector.Enemies
         {
             tuning = newTuning;
             recallConstraint = newRecallConstraint;
+            phaseTwoStarted = false;
+            phaseThreeStarted = false;
+            IsTransitioning = false;
+            transitionTargetPhase = 0;
 
             Configure(
                 tuning != null
                     ? tuning.MaxHealth
-                    : 16f);
+                    : 12f);
+        }
+
+        public void CompletePhaseTransition()
+        {
+            IsTransitioning = false;
+            transitionTargetPhase = 0;
         }
 
         public override WeaponHitResult ResolveWeaponHit(
@@ -41,6 +86,11 @@ namespace ReturnVector.Enemies
             if (!CanReceiveDamage)
             {
                 return new WeaponHitResult(false, false);
+            }
+
+            if (IsTransitioning)
+            {
+                return WeaponHitResult.Block;
             }
 
             if (tuning == null)
@@ -56,7 +106,7 @@ namespace ReturnVector.Enemies
                         tuning.OutboundDamageMultiplier);
 
                 bool damaged =
-                    ApplyDamage(in reduced);
+                    ApplyBossDamage(in reduced);
 
                 if (!CanReceiveDamage)
                 {
@@ -64,16 +114,17 @@ namespace ReturnVector.Enemies
                 }
 
                 if (CanReceiveDamage &&
-                    recallConstraint != null)
+                    recallConstraint != null &&
+                    !IsTransitioning)
                 {
-                    float pinDistance =
-                        tuning.PinRepositionDistance *
-                        (IsPhaseTwo
+                    float phaseDistanceMultiplier =
+                        CurrentPhase >= 2
                             ? tuning.PhaseTwoPinDistanceMultiplier
-                            : 1f);
+                            : 1f;
 
                     recallConstraint.Pin(
-                        pinDistance,
+                        tuning.PinRepositionDistance *
+                        phaseDistanceMultiplier,
                         tuning.PinFailSafeSeconds);
                 }
 
@@ -90,7 +141,7 @@ namespace ReturnVector.Enemies
                         tuning.RecallDamageMultiplier);
 
                 bool damaged =
-                    ApplyDamage(in amplified);
+                    ApplyBossDamage(in amplified);
 
                 if (!CanReceiveDamage)
                 {
@@ -103,7 +154,7 @@ namespace ReturnVector.Enemies
             }
 
             bool ordinary =
-                ApplyDamage(in damage);
+                ApplyBossDamage(in damage);
 
             if (!CanReceiveDamage)
             {
@@ -119,6 +170,69 @@ namespace ReturnVector.Enemies
             in DamageInfo damage)
         {
             ResolveWeaponHit(in damage);
+        }
+
+        private bool ApplyBossDamage(
+            in DamageInfo damage)
+        {
+            if (ShouldBeginPhaseThree(damage.Amount))
+            {
+                BeginPhaseThree();
+                return true;
+            }
+
+            bool damaged =
+                ApplyDamage(in damage);
+
+            if (damaged)
+            {
+                CheckPhaseTwoTransition();
+            }
+
+            return damaged;
+        }
+
+        private bool ShouldBeginPhaseThree(float incomingDamage)
+        {
+            return
+                GameDifficulty.MaxBossPhases >= 3 &&
+                phaseTwoStarted &&
+                !phaseThreeStarted &&
+                !IsTransitioning &&
+                CanReceiveDamage &&
+                incomingDamage > 0f &&
+                incomingDamage >= CurrentHealth;
+        }
+
+        private void CheckPhaseTwoTransition()
+        {
+            if (GameDifficulty.MaxBossPhases < 2 ||
+                phaseTwoStarted ||
+                !CanReceiveDamage ||
+                tuning == null ||
+                HealthRatio > tuning.PhaseTwoHealthRatio)
+            {
+                return;
+            }
+
+            phaseTwoStarted = true;
+            IsTransitioning = true;
+            transitionTargetPhase = 2;
+            recallConstraint?.Release();
+            PhaseTwoStarted?.Invoke();
+        }
+
+        private void BeginPhaseThree()
+        {
+            phaseThreeStarted = true;
+            IsTransitioning = true;
+            transitionTargetPhase = 3;
+            recallConstraint?.Release();
+
+            // Phase three is a fresh health bar with the same authored maximum.
+            Configure(MaxHealth);
+
+            PhaseThreeStarted?.Invoke();
         }
 
         private static DamageInfo ScaleDamage(

@@ -1,48 +1,115 @@
 using NUnit.Framework;
+using ReturnVector.Combat;
+using ReturnVector.Surfaces;
 using ReturnVector.Weapon;
 using UnityEngine;
 
-namespace ReturnVector.Tests
+namespace ReturnVector.Tests.EditMode
 {
-    /// <summary>
-    /// Covers contact placement used by swept weapon collision.
-    /// </summary>
     public sealed class WeaponCollisionUtilityTests
     {
         [Test]
-        public void SurfaceRestPosition_LeavesSphereOutsideSurface()
+        public void StopDistance_UsesMinimumContactSkin()
         {
-            Vector3 result =
-                WeaponCollisionUtility.SurfaceRestPosition(
-                    Vector3.zero,
-                    Vector3.right,
-                    0.12f,
-                    0.005f,
-                    Vector3.one);
+            float result =
+                WeaponCollisionUtility.StopDistance(
+                    1f,
+                    0.001f);
 
             Assert.AreEqual(
-                0.13f,
-                result.x,
+                0.985f,
+                result,
                 0.0001f);
-            Assert.AreEqual(0f, result.y, 0.0001f);
-            Assert.AreEqual(0f, result.z, 0.0001f);
         }
 
         [Test]
-        public void SurfaceRestPosition_UsesFallbackForInvalidNormal()
+        public void StopDistance_NeverMovesPastOrigin()
         {
-            Vector3 fallback =
-                new Vector3(2f, 3f, 4f);
-
-            Vector3 result =
-                WeaponCollisionUtility.SurfaceRestPosition(
-                    Vector3.zero,
-                    Vector3.zero,
-                    0.12f,
+            float result =
+                WeaponCollisionUtility.StopDistance(
                     0.005f,
-                    fallback);
+                    0.02f);
 
-            Assert.AreEqual(fallback, result);
+            Assert.AreEqual(
+                0f,
+                result,
+                0.0001f);
+        }
+
+        [Test]
+        public void ReachablePosition_StopsBeforeSolidGeometry()
+        {
+            GameObject wall = new GameObject("Wall");
+            BoxCollider collider = wall.AddComponent<BoxCollider>();
+            wall.transform.position = new Vector3(1f, 0f, 0f);
+            collider.size = new Vector3(0.2f, 2f, 2f);
+            Physics.SyncTransforms();
+
+            RaycastHit[] hits = new RaycastHit[8];
+            Collider[] overlaps = new Collider[8];
+
+            bool resolved =
+                WeaponCollisionUtility.TryResolveReachableWorldPosition(
+                    Vector3.zero,
+                    new Vector3(2f, 0f, 0f),
+                    0.1f,
+                    0.015f,
+                    ~0,
+                    AttackPhase.Outbound,
+                    hits,
+                    overlaps,
+                    null,
+                    null,
+                    out Vector3 position,
+                    out bool blocked);
+
+            Assert.IsTrue(resolved);
+            Assert.IsTrue(blocked);
+            Assert.Less(position.x, 0.8f);
+
+            Object.DestroyImmediate(wall);
+        }
+
+        [Test]
+        public void ReachablePosition_AllowsPenetrableSurface()
+        {
+            GameObject wall = new GameObject("PenetrableWall");
+            BoxCollider collider = wall.AddComponent<BoxCollider>();
+            wall.transform.position = new Vector3(1f, 0f, 0f);
+            collider.size = new Vector3(0.2f, 2f, 2f);
+
+            WeaponSurfaceProfile profile =
+                ScriptableObject.CreateInstance<WeaponSurfaceProfile>();
+            profile.ResetDefaults(WeaponSurfaceKind.Penetrable);
+
+            WeaponSurface surface = wall.AddComponent<WeaponSurface>();
+            surface.Configure(profile);
+            Physics.SyncTransforms();
+
+            RaycastHit[] hits = new RaycastHit[8];
+            Collider[] overlaps = new Collider[8];
+
+            bool resolved =
+                WeaponCollisionUtility.TryResolveReachableWorldPosition(
+                    Vector3.zero,
+                    new Vector3(2f, 0f, 0f),
+                    0.1f,
+                    0.015f,
+                    ~0,
+                    AttackPhase.Outbound,
+                    hits,
+                    overlaps,
+                    null,
+                    null,
+                    out Vector3 position,
+                    out bool blocked);
+
+            Assert.IsTrue(resolved);
+            Assert.IsFalse(blocked);
+            Assert.AreEqual(2f, position.x, 0.001f);
+
+            Object.DestroyImmediate(profile);
+            Object.DestroyImmediate(wall);
         }
     }
 }

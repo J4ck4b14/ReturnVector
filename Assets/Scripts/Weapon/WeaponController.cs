@@ -10,11 +10,23 @@ namespace ReturnVector.Weapon
     /// </summary>
     public sealed class WeaponController : MonoBehaviour
     {
+        private const int HeldHitBufferSize = 24;
+        private const int HeldOverlapBufferSize = 24;
+
         [SerializeField] private Transform owner;
         [SerializeField] private Transform heldAnchor;
         [SerializeField] private RVDebugSettings debugSettings;
 
+        private readonly RaycastHit[] heldHitBuffer =
+            new RaycastHit[HeldHitBufferSize];
+        private readonly Collider[] heldOverlapBuffer =
+            new Collider[HeldOverlapBufferSize];
+
         private WeaponStateMachine stateMachine;
+        private float heldCollisionRadius = 0.12f;
+        private float heldSurfaceBackoff = 0.015f;
+        private LayerMask heldCollisionMask = ~0;
+        private bool heldCollisionConfigured;
 
         public Transform Owner => owner;
         public Transform HeldAnchor => heldAnchor;
@@ -64,6 +76,37 @@ namespace ReturnVector.Weapon
             heldAnchor = newHeldAnchor;
             debugSettings = settings;
             SnapToHeldAnchorIfNeeded();
+        }
+
+        public void ConfigureHeldCollision(
+            WeaponThrowTuning tuning)
+        {
+            if (tuning == null)
+            {
+                heldCollisionConfigured = false;
+                return;
+            }
+
+            heldCollisionRadius =
+                Mathf.Max(0.001f, tuning.CollisionRadius);
+            heldSurfaceBackoff =
+                Mathf.Max(0f, tuning.SurfaceBackoff);
+            heldCollisionMask = tuning.CollisionMask;
+            heldCollisionConfigured = true;
+
+            SnapToHeldAnchorIfNeeded();
+        }
+
+        public bool PrepareOutboundLaunch()
+        {
+            WeaponState state = State;
+            if (state != WeaponState.Held &&
+                state != WeaponState.ThrowAnticipation)
+            {
+                return false;
+            }
+
+            return SnapToHeldAnchorIfNeeded();
         }
 
         public bool BeginThrowAnticipation() =>
@@ -140,23 +183,55 @@ namespace ReturnVector.Weapon
             }
         }
 
-        private void SnapToHeldAnchorIfNeeded()
+        private bool SnapToHeldAnchorIfNeeded()
         {
             if (heldAnchor == null)
             {
-                return;
+                return false;
             }
 
             WeaponState state = State;
             if (state != WeaponState.Held &&
                 state != WeaponState.ThrowAnticipation)
             {
-                return;
+                return true;
+            }
+
+            Vector3 desiredPosition =
+                heldAnchor.position;
+            Vector3 resolvedPosition =
+                desiredPosition;
+
+            if (heldCollisionConfigured &&
+                owner != null)
+            {
+                Vector3 referencePosition =
+                    owner.position;
+                referencePosition.y =
+                    desiredPosition.y;
+
+                if (!WeaponCollisionUtility.TryResolveReachableWorldPosition(
+                        referencePosition,
+                        desiredPosition,
+                        heldCollisionRadius,
+                        heldSurfaceBackoff,
+                        heldCollisionMask,
+                        ReturnVector.Combat.AttackPhase.Outbound,
+                        heldHitBuffer,
+                        heldOverlapBuffer,
+                        transform,
+                        owner,
+                        out resolvedPosition,
+                        out _))
+                {
+                    return false;
+                }
             }
 
             transform.SetPositionAndRotation(
-                heldAnchor.position,
+                resolvedPosition,
                 heldAnchor.rotation);
+            return true;
         }
 
         private void OnDrawGizmosSelected()
