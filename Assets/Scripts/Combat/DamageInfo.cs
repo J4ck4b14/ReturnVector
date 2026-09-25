@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Data passed to a combat target when a hit is resolved. Keeping the phase explicit lets enemies react differently to outbound and recall hits.
+
 namespace ReturnVector.Combat
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace ReturnVector.Combat
     /// </summary>
     public readonly struct DamageInfo
     {
+        // Combat variables
         public readonly float Amount;
         public readonly Vector3 Point;
         public readonly Vector3 Direction;
@@ -15,6 +18,9 @@ namespace ReturnVector.Combat
         public readonly GameObject Source;
         public readonly AttackPhase Phase;
 
+        /// <summary>
+        /// Creates a new DamageInfo with the supplied values.
+        /// </summary>
         public DamageInfo(
             float amount,
             Vector3 point,

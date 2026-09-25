@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using ReturnVector.Encounters;
 
+// Script summary: Edit Mode coverage for EncounterTimelineMath.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -8,6 +10,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class EncounterTimelineMathTests
     {
+        /// <summary>
+        /// Verifies that spawn is not due before its delay.
+        /// </summary>
         [Test]
         public void Spawn_IsNotDueBeforeItsDelay()
         {
@@ -22,6 +27,9 @@ namespace ReturnVector.Tests
                     0.5f));
         }
 
+        /// <summary>
+        /// Verifies that phase cannot advance while enemy lives.
+        /// </summary>
         [Test]
         public void Phase_CannotAdvanceWhileEnemyLives()
         {
@@ -33,6 +41,9 @@ namespace ReturnVector.Tests
                     1f));
         }
 
+        /// <summary>
+        /// Verifies that phase cannot advance before every spawn was issued.
+        /// </summary>
         [Test]
         public void Phase_CannotAdvanceBeforeEverySpawnWasIssued()
         {
@@ -44,6 +55,9 @@ namespace ReturnVector.Tests
                     1f));
         }
 
+        /// <summary>
+        /// Verifies that phase advances only after minimum duration.
+        /// </summary>
         [Test]
         public void Phase_AdvancesOnlyAfterMinimumDuration()
         {

@@ -1,9 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using ReturnVector.Core;
 using ReturnVector.Enemies;
 using ReturnVector.GameFeel;
 using ReturnVector.Surfaces;
 using UnityEngine;
+
+// Script summary: Owns the Warden arena layout changes and the phase-three reinforcement waves.
 
 namespace ReturnVector.Encounters
 {
@@ -13,6 +16,7 @@ namespace ReturnVector.Encounters
     [DisallowMultipleComponent]
     public sealed class ReturnWardenArenaController : MonoBehaviour
     {
+        // Warden arena variables
         private const float PhaseOneHalfWidth = 9.6f;
         private const float PhaseOneHalfDepth = 6f;
         private const float PhaseTwoHalfWidth = 6.15f;
@@ -20,6 +24,7 @@ namespace ReturnVector.Encounters
         private const float CombatantInset = 1.05f;
         private const float MinimumBossPlayerSeparation = 3.8f;
 
+        // Runtime reference variables
         [SerializeField] private ReturnWardenHealth health;
         [SerializeField] private EncounterEnemyFactory factory;
         [SerializeField] private EncounterController encounter;
@@ -28,11 +33,13 @@ namespace ReturnVector.Encounters
         [SerializeField] private Transform player;
         [SerializeField] private RVCameraFeedback cameraFeedback;
 
+        // Surface variables
         [SerializeField] private WeaponSurfaceProfile reflectiveProfile;
         [SerializeField] private WeaponSurfaceProfile penetrableProfile;
         [SerializeField] private WeaponSurfaceProfile absorbingProfile;
         [SerializeField] private WeaponSurfaceProfile curvingProfile;
 
+        // Material variables
         [SerializeField] private Material reflectiveMaterial;
         [SerializeField] private Material penetrableMaterial;
         [SerializeField] private Material absorbingMaterial;
@@ -40,6 +47,7 @@ namespace ReturnVector.Encounters
         [SerializeField] private Material solidMaterial;
         [SerializeField] private Material spawnTelegraphMaterial;
 
+        // Arena state variables
         private readonly List<GameObject> phaseOneObjects =
             new List<GameObject>(12);
 
@@ -49,10 +57,14 @@ namespace ReturnVector.Encounters
         private readonly List<EnemyHealth> phaseThreeMinions =
             new List<EnemyHealth>(12);
 
+        // Runtime state variables
         private Vector3 arenaCenter;
         private bool phaseTwoStarted;
         private bool phaseThreeStarted;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             ReturnWardenHealth newHealth,
             EncounterEnemyFactory newFactory,
@@ -103,16 +115,25 @@ namespace ReturnVector.Encounters
             Subscribe();
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             Subscribe();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             Unsubscribe();
         }
 
+        /// <summary>
+        /// Subscribes to the runtime events used by this component.
+        /// </summary>
         private void Subscribe()
         {
             if (health == null)
@@ -130,6 +151,9 @@ namespace ReturnVector.Encounters
             health.Died += HandleBossDeath;
         }
 
+        /// <summary>
+        /// Unsubscribes from the runtime events used by this component.
+        /// </summary>
         private void Unsubscribe()
         {
             if (health == null)
@@ -142,6 +166,9 @@ namespace ReturnVector.Encounters
             health.Died -= HandleBossDeath;
         }
 
+        /// <summary>
+        /// Builds the phase one layout.
+        /// </summary>
         private void BuildPhaseOneLayout()
         {
             if (arenaRoot == null)
@@ -225,6 +252,9 @@ namespace ReturnVector.Encounters
             cameraFeedback?.SetArenaFraming(10.6f, true);
         }
 
+        /// <summary>
+        /// Moves the boss-room gates outward for the wider first phase.
+        /// </summary>
         private void ExpandEntranceAndExitGates()
         {
             if (encounter == null || arenaRoot == null)
@@ -250,6 +280,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Responds when Warden phase two begins.
+        /// </summary>
         private void HandlePhaseTwoStarted()
         {
             if (phaseTwoStarted)
@@ -261,6 +294,9 @@ namespace ReturnVector.Encounters
             StartCoroutine(CloseArenaForPhaseTwo());
         }
 
+        /// <summary>
+        /// Responds when Warden phase three begins.
+        /// </summary>
         private void HandlePhaseThreeStarted()
         {
             if (phaseThreeStarted)
@@ -272,6 +308,9 @@ namespace ReturnVector.Encounters
             StartCoroutine(RunPhaseThreeReinforcements());
         }
 
+        /// <summary>
+        /// Animates the boss-room perimeter inward for phase two.
+        /// </summary>
         private IEnumerator CloseArenaForPhaseTwo()
         {
             SolidifyAuthoredSurfaces();
@@ -335,6 +374,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Creates the phase two perimeter.
+        /// </summary>
         private void CreatePhaseTwoPerimeter()
         {
             if (arenaRoot == null)
@@ -367,6 +409,9 @@ namespace ReturnVector.Encounters
                     new Vector3(PhaseTwoHalfWidth * 2f, 1.6f, 0.55f)));
         }
 
+        /// <summary>
+        /// Creates the rising solid wall.
+        /// </summary>
         private GameObject CreateRisingSolidWall(
             string wallName,
             Vector3 localPosition,
@@ -388,6 +433,9 @@ namespace ReturnVector.Encounters
             return wall;
         }
 
+        /// <summary>
+        /// Keeps the player and Warden inside the phase-two playable bounds before the walls close.
+        /// </summary>
         private void EnsureCombatantsInsidePhaseTwoBounds()
         {
             if (arenaRoot == null)
@@ -478,6 +526,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Clamps the actor inside to its valid range.
+        /// </summary>
         private void ClampActorInside(
             Transform actor,
             float halfWidth,
@@ -520,6 +571,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Converts the boss-room special surfaces into ordinary solid blockers for phase two.
+        /// </summary>
         private void SolidifyAuthoredSurfaces()
         {
             if (arenaRoot == null)
@@ -559,6 +613,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Runs the staggered phase-three reinforcement sequence.
+        /// </summary>
         private IEnumerator RunPhaseThreeReinforcements()
         {
             cameraFeedback?.Impulse(
@@ -568,6 +625,44 @@ namespace ReturnVector.Encounters
 
             // The first warning arrives while the Warden is still transforming.
             yield return new WaitForSeconds(1.05f);
+
+            if (GameDifficulty.IsExtreme)
+            {
+                yield return SpawnWave(
+                    new[]
+                    {
+                        EnemyArchetype.Rusher,
+                        EnemyArchetype.Rusher,
+                        EnemyArchetype.Controller
+                    },
+                    0.82f);
+
+                yield return WaitForWaveWindow(1, 3.0f);
+
+                yield return SpawnWave(
+                    new[]
+                    {
+                        EnemyArchetype.Shielded,
+                        EnemyArchetype.Controller,
+                        EnemyArchetype.Rusher,
+                        EnemyArchetype.Rusher
+                    },
+                    0.72f);
+
+                yield return WaitForWaveWindow(2, 3.6f);
+
+                yield return SpawnWave(
+                    new[]
+                    {
+                        EnemyArchetype.Shielded,
+                        EnemyArchetype.Shielded,
+                        EnemyArchetype.Controller,
+                        EnemyArchetype.Controller
+                    },
+                    0.62f);
+
+                yield break;
+            }
 
             yield return SpawnWave(
                 new[]
@@ -602,6 +697,9 @@ namespace ReturnVector.Encounters
                 0.62f);
         }
 
+        /// <summary>
+        /// Waits for reinforcement pressure to ease or for the wave timeout to expire.
+        /// </summary>
         private IEnumerator WaitForWaveWindow(
             int desiredAlive,
             float maximumWait)
@@ -625,6 +723,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Spawns the wave.
+        /// </summary>
         private IEnumerator SpawnWave(
             EnemyArchetype[] archetypes,
             float warningDuration)
@@ -684,6 +785,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Chooses spaced reinforcement positions that favour distance from the player.
+        /// </summary>
         private List<Vector3> SelectSpawnPositions(int count)
         {
             Vector3[] localSlots =
@@ -758,6 +862,9 @@ namespace ReturnVector.Encounters
             return chosen;
         }
 
+        /// <summary>
+        /// Creates the spawn warnings.
+        /// </summary>
         private List<GameObject> CreateSpawnWarnings(
             List<Vector3> positions)
         {
@@ -795,6 +902,9 @@ namespace ReturnVector.Encounters
             return warnings;
         }
 
+        /// <summary>
+        /// Configures a phase-three reinforcement as a one-hit enemy.
+        /// </summary>
         private static void ConfigureFragileMinion(EnemyHealth minion)
         {
             if (minion == null)
@@ -807,12 +917,16 @@ namespace ReturnVector.Encounters
             ShieldedEnemyHealth shielded =
                 minion as ShieldedEnemyHealth;
 
-            if (shielded != null)
+            if (shielded != null &&
+                !GameDifficulty.IsExtreme)
             {
                 shielded.SetShieldActive(false);
             }
         }
 
+        /// <summary>
+        /// Counts the phase-three reinforcements that are still alive.
+        /// </summary>
         private int CountLivingPhaseThreeMinions()
         {
             int living = 0;
@@ -835,6 +949,9 @@ namespace ReturnVector.Encounters
             return living;
         }
 
+        /// <summary>
+        /// Responds when the Warden dies.
+        /// </summary>
         private void HandleBossDeath(
             ReturnVector.Combat.DamageInfo damage)
         {
@@ -850,6 +967,9 @@ namespace ReturnVector.Encounters
             phaseThreeMinions.Clear();
         }
 
+        /// <summary>
+        /// Moves the existing piece.
+        /// </summary>
         private void MoveExistingPiece(
             string objectName,
             Vector3 localPosition,
@@ -870,6 +990,9 @@ namespace ReturnVector.Encounters
             piece.localScale = localScale;
         }
 
+        /// <summary>
+        /// Creates the surface wall.
+        /// </summary>
         private GameObject CreateSurfaceWall(
             Transform parent,
             string wallName,
@@ -897,6 +1020,9 @@ namespace ReturnVector.Encounters
             return wall;
         }
 
+        /// <summary>
+        /// Creates the solid wall.
+        /// </summary>
         private GameObject CreateSolidWall(
             Transform parent,
             string wallName,
@@ -918,6 +1044,9 @@ namespace ReturnVector.Encounters
             return wall;
         }
 
+        /// <summary>
+        /// Adds the cuRVature field.
+        /// </summary>
         private static void AddCurvatureField(GameObject wall)
         {
             GameObject field = new GameObject("Curvature_Field");
@@ -937,6 +1066,9 @@ namespace ReturnVector.Encounters
                 430f);
         }
 
+        /// <summary>
+        /// Returns the flat distance.
+        /// </summary>
         private static float FlatDistance(Vector3 a, Vector3 b)
         {
             a.y = 0f;

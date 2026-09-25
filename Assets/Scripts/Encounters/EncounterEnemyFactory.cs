@@ -6,6 +6,8 @@ using ReturnVector.Surfaces;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Builds the prototype enemy archetypes from shared runtime dependencies.
+
 namespace ReturnVector.Encounters
 {
     /// <summary>
@@ -14,17 +16,20 @@ namespace ReturnVector.Encounters
     [DisallowMultipleComponent]
     public sealed class EncounterEnemyFactory : MonoBehaviour
     {
+        // Runtime reference variables
         [Header("Runtime references")]
         [SerializeField] private Transform player;
         [SerializeField] private PlayerTacticalStateSource tacticalState;
         [SerializeField] private WeaponController weapon;
 
+        // Tuning variables
         [Header("Tuning")]
         [SerializeField] private RusherEnemyTuning rusherTuning;
         [SerializeField] private ControllerEnemyTuning controllerTuning;
         [SerializeField] private ReturnWardenTuning returnWardenTuning;
         [SerializeField] private RVGameFeelProfile gameFeelProfile;
 
+        // Material variables
         [Header("Materials")]
         [SerializeField] private Material rusherMaterial;
         [SerializeField] private Material shieldMaterial;
@@ -34,6 +39,7 @@ namespace ReturnVector.Encounters
         [SerializeField] private Material returnWardenPhaseTwoMaterial;
         [SerializeField] private Material returnWardenTelegraphMaterial;
 
+        // Warden arena variables
         [Header("Warden arena")]
         [SerializeField] private WeaponSurfaceProfile reflectiveSurface;
         [SerializeField] private WeaponSurfaceProfile penetrableSurface;
@@ -45,6 +51,11 @@ namespace ReturnVector.Encounters
         [SerializeField] private Material curvingSurfaceMaterial;
         [SerializeField] private Material solidArenaMaterial;
 
+        public Transform Player => player;
+
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             Transform newPlayer,
             PlayerTacticalStateSource newTacticalState,
@@ -67,11 +78,17 @@ namespace ReturnVector.Encounters
             telegraphMaterial = newTelegraphMaterial;
         }
 
+        /// <summary>
+        /// Assigns the game-feel profile used by enemies created by the factory.
+        /// </summary>
         public void ConfigureGameFeel(RVGameFeelProfile newProfile)
         {
             gameFeelProfile = newProfile;
         }
 
+        /// <summary>
+        /// Assigns the Warden tuning and presentation materials used by the factory.
+        /// </summary>
         public void ConfigureReturnWarden(
             ReturnWardenTuning newTuning,
             Material newBossMaterial,
@@ -84,6 +101,30 @@ namespace ReturnVector.Encounters
             returnWardenTelegraphMaterial = newBossTelegraphMaterial;
         }
 
+        /// <summary>
+        /// Creates the pressure warning.
+        /// </summary>
+        public GameObject CreatePressureWarning(
+            Vector3 worldPosition)
+        {
+            GameObject marker =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Cylinder);
+
+            marker.name = "Extreme_Reinforcement_Warning";
+            marker.transform.position =
+                worldPosition + Vector3.down * 0.91f;
+            marker.transform.localScale =
+                new Vector3(0.9f, 0.018f, 0.9f);
+
+            SetMaterial(marker, telegraphMaterial);
+            RemoveCollider(marker);
+            return marker;
+        }
+
+        /// <summary>
+        /// Spawns the requested enemy archetype at the supplied world position.
+        /// </summary>
         public EnemyHealth Spawn(
             EncounterSpawnEntry entry,
             Vector3 worldPosition,
@@ -108,6 +149,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Spawns the rusher.
+        /// </summary>
         private EnemyHealth SpawnRusher(
             Vector3 position,
             Transform parent,
@@ -149,6 +193,9 @@ namespace ReturnVector.Encounters
             return health;
         }
 
+        /// <summary>
+        /// Spawns the shielded.
+        /// </summary>
         private EnemyHealth SpawnShielded(
             Vector3 position,
             Transform parent,
@@ -193,6 +240,9 @@ namespace ReturnVector.Encounters
             return health;
         }
 
+        /// <summary>
+        /// Spawns the controller.
+        /// </summary>
         private EnemyHealth SpawnController(
             Vector3 position,
             Transform parent,
@@ -246,6 +296,9 @@ namespace ReturnVector.Encounters
             return health;
         }
 
+        /// <summary>
+        /// Spawns the Return Warden.
+        /// </summary>
         private EnemyHealth SpawnReturnWarden(
             Vector3 position,
             Transform parent,
@@ -383,6 +436,9 @@ namespace ReturnVector.Encounters
             return health;
         }
 
+        /// <summary>
+        /// Creates the warden shoulder.
+        /// </summary>
         private void CreateWardenShoulder(Transform visual, float x)
         {
             GameObject shoulder = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -394,6 +450,9 @@ namespace ReturnVector.Encounters
             RemoveCollider(shoulder);
         }
 
+        /// <summary>
+        /// Adds procedural attack telegraph feedback to an enemy.
+        /// </summary>
         private EnemyAttackFeedback AttachAttackFeedback(
             GameObject root,
             Transform visual,
@@ -413,6 +472,9 @@ namespace ReturnVector.Encounters
             return feedback;
         }
 
+        /// <summary>
+        /// Adds hit feedback to an enemy without changing its death behaviour.
+        /// </summary>
         private void AttachHitFeedback(
             GameObject root,
             EnemyHealth health)
@@ -432,6 +494,9 @@ namespace ReturnVector.Encounters
                 gameFeelProfile);
         }
 
+        /// <summary>
+        /// Adds the standard hit and death feedback package to an enemy.
+        /// </summary>
         private void AttachHitAndDeathFeedback(
             GameObject root,
             EnemyHealth health,
@@ -450,6 +515,9 @@ namespace ReturnVector.Encounters
                 splatterMaterial);
         }
 
+        /// <summary>
+        /// Creates the enemy root.
+        /// </summary>
         private GameObject CreateEnemyRoot(
             string name,
             Vector3 position,
@@ -479,6 +547,9 @@ namespace ReturnVector.Encounters
             return root;
         }
 
+        /// <summary>
+        /// Creates the radial telegraph.
+        /// </summary>
         private Transform CreateRadialTelegraph(
             Transform parent,
             float diameter,
@@ -495,6 +566,9 @@ namespace ReturnVector.Encounters
             return marker.transform;
         }
 
+        /// <summary>
+        /// Creates the line telegraph.
+        /// </summary>
         private Transform CreateLineTelegraph(
             Transform parent,
             float length,
@@ -514,6 +588,9 @@ namespace ReturnVector.Encounters
             return marker.transform;
         }
 
+        /// <summary>
+        /// Sets the material.
+        /// </summary>
         private static void SetMaterial(GameObject gameObject, Material material)
         {
             if (material == null)
@@ -528,6 +605,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Removes the collider.
+        /// </summary>
         private static void RemoveCollider(GameObject gameObject)
         {
             Collider collider = gameObject.GetComponent<Collider>();

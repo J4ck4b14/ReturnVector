@@ -1,3 +1,6 @@
+
+// Script summary: Explicit lifecycle states for the persistent weapon.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>

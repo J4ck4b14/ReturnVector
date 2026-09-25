@@ -2,6 +2,8 @@ using ReturnVector.Surfaces;
 using UnityEditor;
 using UnityEngine;
 
+// Script summary: Draws surface orientation and curvature helpers in the Scene view.
+
 namespace ReturnVector.Editor
 {
     /// <summary>
@@ -9,6 +11,9 @@ namespace ReturnVector.Editor
     /// </summary>
     public static class WeaponSurfaceGizmoDrawer
     {
+        /// <summary>
+        /// Draws the surface.
+        /// </summary>
         [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
         private static void DrawSurface(WeaponSurface surface, GizmoType gizmoType)
         {
@@ -21,6 +26,9 @@ namespace ReturnVector.Editor
             Handles.Label(labelPosition, $"RV: {surface.Profile.Kind}");
         }
 
+        /// <summary>
+        /// Draws the cuRVature field.
+        /// </summary>
         [DrawGizmo(GizmoType.Selected)]
         private static void DrawCurvatureField(WeaponCurvatureField field, GizmoType gizmoType)
         {

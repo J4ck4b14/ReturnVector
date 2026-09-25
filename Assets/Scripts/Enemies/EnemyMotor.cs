@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Script summary: Planar enemy locomotion with A* routing around blocking geometry.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>
@@ -9,6 +11,7 @@ namespace ReturnVector.Enemies
     [DisallowMultipleComponent]
     public sealed class EnemyMotor : MonoBehaviour
     {
+        // Navigation variables
         [SerializeField] private CharacterController controller;
         [SerializeField, Min(0f)] private float turnDegreesPerSecond = 720f;
         [SerializeField, Min(0.4f)] private float pathCellSize = 0.72f;
@@ -24,6 +27,9 @@ namespace ReturnVector.Enemies
         public Vector3 Velocity { get; private set; }
         public float Speed => Velocity.magnitude;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             CharacterController newController,
             float turnRate = 720f)
@@ -43,6 +49,9 @@ namespace ReturnVector.Enemies
             repathTimer = 0f;
         }
 
+        /// <summary>
+        /// Moves the toward.
+        /// </summary>
         public void MoveToward(
             Vector3 worldTarget,
             float speed,
@@ -136,6 +145,9 @@ namespace ReturnVector.Enemies
                 0f);
         }
 
+        /// <summary>
+        /// Moves the away from.
+        /// </summary>
         public void MoveAwayFrom(
             Vector3 worldThreat,
             float speed,
@@ -193,6 +205,9 @@ namespace ReturnVector.Enemies
             MoveDirection(bestDirection, speed, deltaTime);
         }
 
+        /// <summary>
+        /// Moves the direction.
+        /// </summary>
         public void MoveDirection(
             Vector3 worldDirection,
             float speed,
@@ -230,11 +245,17 @@ namespace ReturnVector.Enemies
             FaceDirection(direction, deltaTime);
         }
 
+        /// <summary>
+        /// Stops enemy locomotion and clears its current velocity.
+        /// </summary>
         public void Stop()
         {
             Velocity = Vector3.zero;
         }
 
+        /// <summary>
+        /// Rotates the actor to face the target.
+        /// </summary>
         public void FaceTarget(
             Vector3 worldTarget,
             float deltaTime)
@@ -244,6 +265,9 @@ namespace ReturnVector.Enemies
             FaceDirection(direction, deltaTime);
         }
 
+        /// <summary>
+        /// Recalculates the current A* route to the target position.
+        /// </summary>
         private void RebuildPath(Vector3 worldTarget)
         {
             path.Clear();
@@ -261,6 +285,9 @@ namespace ReturnVector.Enemies
                 pathPadding);
         }
 
+        /// <summary>
+        /// Skips route waypoints that can be reached directly from the current position.
+        /// </summary>
         private void SkipVisibleWaypoints()
         {
             for (int i = path.Count - 1; i > pathIndex; i--)
@@ -279,6 +306,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Moves the strAIght toward.
+        /// </summary>
         private void MoveStraightToward(
             Vector3 target,
             float speed,
@@ -318,6 +348,9 @@ namespace ReturnVector.Enemies
             FaceDirection(direction, deltaTime);
         }
 
+        /// <summary>
+        /// Rotates the actor to face the direction.
+        /// </summary>
         private void FaceDirection(
             Vector3 direction,
             float deltaTime)

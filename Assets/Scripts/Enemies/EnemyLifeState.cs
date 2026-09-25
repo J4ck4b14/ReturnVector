@@ -1,3 +1,6 @@
+
+// Script summary: Basic alive/dead state for enemy actors.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>

@@ -2,6 +2,8 @@ using ReturnVector.Player;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Adds lightweight pose offsets for movement, throw, dodge and catch beats.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace ReturnVector.GameFeel
     [DisallowMultipleComponent]
     public sealed class PlayerProceduralPose : MonoBehaviour
     {
+        // Feedback variables
         [SerializeField] private Transform visualRoot;
         [SerializeField] private PlayerMov movement;
         [SerializeField] private PlayerCombatController combat;
@@ -24,22 +27,34 @@ namespace ReturnVector.GameFeel
         private float releaseKick;
         private float catchKick;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             CaptureBasePose();
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             Bind();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             Unbind();
             ResetPose();
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             Transform newVisualRoot,
             PlayerMov newMovement,
@@ -65,6 +80,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Subscribes this presentation component to its gameplay events.
+        /// </summary>
         private void Bind()
         {
             if (throwController != null)
@@ -80,6 +98,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Unsubscribes this presentation component from its gameplay events.
+        /// </summary>
         private void Unbind()
         {
             if (throwController != null)
@@ -95,6 +116,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (visualRoot == null ||
@@ -218,17 +242,26 @@ namespace ReturnVector.GameFeel
                     blend);
         }
 
+        /// <summary>
+        /// Responds when the outbound throw is released.
+        /// </summary>
         private void HandleThrowReleased(
             Vector3 direction)
         {
             releaseKick = 1f;
         }
 
+        /// <summary>
+        /// Responds when the baton catch completes.
+        /// </summary>
         private void HandleCatchCompleted()
         {
             catchKick = 1f;
         }
 
+        /// <summary>
+        /// Captures the base pose.
+        /// </summary>
         private void CaptureBasePose()
         {
             if (visualRoot == null)
@@ -246,6 +279,9 @@ namespace ReturnVector.GameFeel
                 visualRoot.localScale;
         }
 
+        /// <summary>
+        /// Resets the pose.
+        /// </summary>
         private void ResetPose()
         {
             if (visualRoot == null)

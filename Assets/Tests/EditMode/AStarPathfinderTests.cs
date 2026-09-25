@@ -3,10 +3,15 @@ using NUnit.Framework;
 using ReturnVector.Enemies;
 using UnityEngine;
 
+// Script summary: Contains Edit Mode coverage for A Star Pathfinder.
+
 namespace ReturnVector.Tests
 {
     public sealed class AStarPathfinderTests
     {
+        /// <summary>
+        /// Verifies that blocked strAIght route finds path around wall.
+        /// </summary>
         [Test]
         public void BlockedStraightRoute_FindsPathAroundWall()
         {

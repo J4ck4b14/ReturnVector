@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 
+// Script summary: Authored phase data for a combat encounter.
+
 namespace ReturnVector.Encounters
 {
     [CreateAssetMenu(
@@ -11,6 +13,7 @@ namespace ReturnVector.Encounters
     /// </summary>
     public sealed class EncounterDefinition : ScriptableObject
     {
+        // Encounter variables
         [SerializeField] private string displayName = "Encounter";
         [SerializeField, TextArea] private string learningGoal;
         [SerializeField] private EncounterPhaseDefinition[] phases =
@@ -20,6 +23,9 @@ namespace ReturnVector.Encounters
         public string LearningGoal => learningGoal;
         public EncounterPhaseDefinition[] Phases => phases;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             string newDisplayName,
             string newLearningGoal,

@@ -1,3 +1,6 @@
+
+// Script summary: Distinguishes pointer aim from directional-stick aim.
+
 namespace ReturnVector.Input
 {
     /// <summary>

@@ -1,3 +1,6 @@
+
+// Script summary: Behaviour states used by the Rusher.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>

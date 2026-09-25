@@ -1,3 +1,6 @@
+
+// Script summary: Pure timing helpers used by encounter progression.
+
 namespace ReturnVector.Encounters
 {
     /// <summary>
@@ -5,6 +8,9 @@ namespace ReturnVector.Encounters
     /// </summary>
     public static class EncounterTimelineMath
     {
+        /// <summary>
+        /// Checks whether a spawn entry has reached its authored delay.
+        /// </summary>
         public static bool IsSpawnDue(
             float phaseElapsed,
             float spawnDelay)
@@ -12,6 +18,9 @@ namespace ReturnVector.Encounters
             return phaseElapsed >= spawnDelay;
         }
 
+        /// <summary>
+        /// Checks whether the current encounter phase may advance.
+        /// </summary>
         public static bool CanAdvancePhase(
             bool allEntriesSpawned,
             int liveEnemyCount,

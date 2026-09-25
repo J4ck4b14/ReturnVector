@@ -1,3 +1,6 @@
+
+// Script summary: Tracks whether the player currently has access to the weapon.
+
 namespace ReturnVector.Player
 {
     /// <summary>

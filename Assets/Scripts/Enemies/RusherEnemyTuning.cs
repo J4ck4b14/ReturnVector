@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Movement and attack values for the Rusher.
+
 namespace ReturnVector.Enemies
 {
     [CreateAssetMenu(
@@ -10,6 +12,7 @@ namespace ReturnVector.Enemies
     /// </summary>
     public sealed class RusherEnemyTuning : ScriptableObject
     {
+        // Enemy variables
         [Min(0f)] public float ArmedMoveSpeed = 3.8f;
         [Min(0f)] public float ExposedMoveSpeed = 6.2f;
         [Min(0f)] public float AttackRange = 1.25f;
@@ -18,6 +21,9 @@ namespace ReturnVector.Enemies
         [Min(0f)] public float RecoverySeconds = 0.70f;
         [Min(0f)] public float AttackDamage = 1.5f;
 
+        /// <summary>
+        /// Restores the authored default tuning values.
+        /// </summary>
         public void ResetDefaults()
         {
             ArmedMoveSpeed = 3.8f;

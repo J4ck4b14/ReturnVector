@@ -5,6 +5,8 @@ using ReturnVector.Debugging;
 using ReturnVector.Surfaces;
 using UnityEngine;
 
+// Script summary: Controlled outbound projectile simulation. Travel uses fixed-step swept casts so collision response and surface routing stay predictable.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -13,20 +15,24 @@ namespace ReturnVector.Weapon
     /// </summary>
     public sealed class OutboundWeaponMotor : MonoBehaviour
     {
+        // Collision variables
         private const int HitBufferSize = 32;
         private const int CurvatureBufferSize = 16;
         private const int OverlapBufferSize = 24;
 
+        // Weapon variables
         [SerializeField] private WeaponController weapon;
         [SerializeField] private WeaponThrowTuning tuning;
         [SerializeField] private RVDebugSettings debugSettings;
 
+        // Collision variables
         private readonly RaycastHit[] hitBuffer = new RaycastHit[HitBufferSize];
         private readonly Collider[] curvatureBuffer = new Collider[CurvatureBufferSize];
         private readonly Collider[] overlapBuffer = new Collider[OverlapBufferSize];
         private readonly HashSet<int> damagedColliderIds = new HashSet<int>();
         private readonly HashSet<int> passedSurfaceColliderIds = new HashSet<int>();
 
+        // Weapon variables
         private Vector3 direction;
         private float currentSpeed;
         private float remainingDistance;
@@ -47,6 +53,9 @@ namespace ReturnVector.Weapon
         public event Action<WeaponSurfaceInteractionInfo> SurfaceInteracted;
         public event Action Parked;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             WeaponController newWeapon,
             WeaponThrowTuning newTuning,
@@ -57,6 +66,9 @@ namespace ReturnVector.Weapon
             debugSettings = newDebugSettings;
         }
 
+        /// <summary>
+        /// Starts the corresponding weapon travel simulation.
+        /// </summary>
         public bool Begin(Vector3 outboundDirection)
         {
             if (weapon == null || tuning == null ||
@@ -90,6 +102,9 @@ namespace ReturnVector.Weapon
         }
 
 
+        /// <summary>
+        /// Redirects weapon travel toward the requested world-space direction.
+        /// </summary>
         public bool DeflectToward(
             Vector3 desiredWorldDirection,
             float maxDegrees)
@@ -129,6 +144,9 @@ namespace ReturnVector.Weapon
             return true;
         }
 
+        /// <summary>
+        /// Stops the current weapon travel simulation immediately.
+        /// </summary>
         public void Abort()
         {
             active = false;
@@ -138,11 +156,17 @@ namespace ReturnVector.Weapon
             passedSurfaceColliderIds.Clear();
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             Tick(Time.deltaTime);
         }
 
+        /// <summary>
+        /// Advances the current fixed-step simulation.
+        /// </summary>
         public void Tick(float deltaTime)
         {
             if (!active ||
@@ -191,6 +215,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Simulates one outbound weapon movement step.
+        /// </summary>
         private void SimulateStep(float deltaTime)
         {
             if (WeaponCollisionUtility.HasBlockingOverlap(
@@ -695,6 +722,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Publishes the resolved surface interaction for feedback and diagnostics.
+        /// </summary>
         private void EmitSurfaceInteraction(
             WeaponSurfaceKind kind,
             RaycastHit hit,
@@ -712,6 +742,9 @@ namespace ReturnVector.Weapon
                     hit.collider));
         }
 
+        /// <summary>
+        /// Draws the normal.
+        /// </summary>
         private void DrawNormal(
             RaycastHit hit,
             float length,
@@ -732,6 +765,9 @@ namespace ReturnVector.Weapon
         }
 
         // Parking keeps the persistent weapon in world space until recall begins.
+        /// <summary>
+        /// Stops outbound travel and parks the weapon at its current safe position.
+        /// </summary>
         private void ParkAtCurrentPosition(bool embedded)
         {
             active = false;

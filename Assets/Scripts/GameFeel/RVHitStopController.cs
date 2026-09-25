@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Owns brief global time-scale punches used on high-value impacts.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace ReturnVector.GameFeel
     [DisallowMultipleComponent]
     public sealed class RVHitStopController : MonoBehaviour
     {
+        // Feedback variables
         private float remaining;
         private float requestedScale = 1f;
         private float baseFixedDeltaTime;
@@ -16,12 +19,18 @@ namespace ReturnVector.GameFeel
         public bool IsActive => active;
         public float Remaining => remaining;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             baseFixedDeltaTime =
                 Mathf.Max(0.0001f, Time.fixedDeltaTime);
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (!active)
@@ -37,11 +46,17 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             RestoreTime();
         }
 
+        /// <summary>
+        /// Requests a short global hit-stop effect.
+        /// </summary>
         public void Request(
             float duration,
             float timeScale)
@@ -79,6 +94,9 @@ namespace ReturnVector.GameFeel
                 requestedScale;
         }
 
+        /// <summary>
+        /// Restores the normal time scale after hit stop.
+        /// </summary>
         private void RestoreTime()
         {
             if (!active)

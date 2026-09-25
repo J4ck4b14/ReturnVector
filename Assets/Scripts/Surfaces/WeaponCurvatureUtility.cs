@@ -1,6 +1,8 @@
 using ReturnVector.Combat;
 using UnityEngine;
 
+// Script summary: Finds active curvature fields and applies their steering in a stable order.
+
 namespace ReturnVector.Surfaces
 {
     /// <summary>
@@ -8,6 +10,9 @@ namespace ReturnVector.Surfaces
     /// </summary>
     public static class WeaponCurvatureUtility
     {
+        /// <summary>
+        /// Applies the at position.
+        /// </summary>
         public static Vector3 ApplyAtPosition(
             Vector3 position,
             Vector3 currentDirection,

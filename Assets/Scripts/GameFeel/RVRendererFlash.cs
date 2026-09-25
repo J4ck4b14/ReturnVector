@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Short MaterialPropertyBlock flash used for impact feedback.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -7,13 +9,18 @@ namespace ReturnVector.GameFeel
     /// </summary>
     public sealed class RVRendererFlash : MonoBehaviour
     {
+        // Visual variables
         [SerializeField] private Renderer[] renderers;
 
+        // Feedback variables
         private MaterialPropertyBlock block;
         private float remaining;
         private float duration;
         private Color flashColor = Color.white;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             Renderer[] newRenderers)
         {
@@ -21,6 +28,9 @@ namespace ReturnVector.GameFeel
                 newRenderers ?? new Renderer[0];
         }
 
+        /// <summary>
+        /// Starts a short renderer flash using the requested feedback colour and duration.
+        /// </summary>
         public void Flash(
             float seconds,
             Color color)
@@ -39,6 +49,9 @@ namespace ReturnVector.GameFeel
             flashColor = color;
         }
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             block =
@@ -53,6 +66,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (remaining <= 0f)
@@ -86,11 +102,17 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             Apply(0f);
         }
 
+        /// <summary>
+        /// Applies the configured surface or curvature response.
+        /// </summary>
         private void Apply(float strength)
         {
             if (renderers == null)

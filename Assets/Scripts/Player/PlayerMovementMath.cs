@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Pure movement and dodge calculations used by PlayerMov.
+
 namespace ReturnVector.Player
 {
     /// <summary>
@@ -7,6 +9,9 @@ namespace ReturnVector.Player
     /// </summary>
     public static class PlayerMovementMath
     {
+        /// <summary>
+        /// Converts local movement input into a normalized world-space direction.
+        /// </summary>
         public static Vector3 GetWorldMove(Vector2 input, float deadzone)
         {
             float sqrDeadzone = deadzone * deadzone;
@@ -19,6 +24,10 @@ namespace ReturnVector.Player
             return new Vector3(clamped.x, 0f, clamped.y);
         }
 
+        /// <summary>
+        /// Moves velocity toward the desired value using the configured acceleration or
+        /// deceleration.
+        /// </summary>
         public static Vector3 StepVelocity(
             Vector3 current,
             Vector3 desired,
@@ -41,6 +50,9 @@ namespace ReturnVector.Player
                 Mathf.Max(0f, rate) * deltaTime);
         }
 
+        /// <summary>
+        /// Chooses dodge direction from movement input, then aim, then facing.
+        /// </summary>
         public static Vector3 ChooseDodgeDirection(
             Vector2 moveInput,
             float moveDeadzone,
@@ -68,6 +80,9 @@ namespace ReturnVector.Player
             return Vector3.forward;
         }
 
+        /// <summary>
+        /// Returns the distance contributed by the dodge curve during the current frame.
+        /// </summary>
         public static float DodgeDistanceDelta(
             AnimationCurve curve,
             float previousNormalizedTime,

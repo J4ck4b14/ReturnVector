@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Cosmetic spin applied to the weapon visual child during travel.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -7,11 +9,15 @@ namespace ReturnVector.Weapon
     /// </summary>
     public sealed class WeaponSpinVisual : MonoBehaviour
     {
+        // Weapon variables
         [SerializeField] private WeaponController weapon;
         [SerializeField] private WeaponThrowTuning throwTuning;
         [SerializeField] private WeaponRecallTuning recallTuning;
         [SerializeField] private Vector3 localAxis = Vector3.right;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             WeaponController newWeapon,
             WeaponThrowTuning newThrowTuning)
@@ -19,6 +25,9 @@ namespace ReturnVector.Weapon
             Configure(newWeapon, newThrowTuning, null);
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             WeaponController newWeapon,
             WeaponThrowTuning newThrowTuning,
@@ -29,6 +38,9 @@ namespace ReturnVector.Weapon
             recallTuning = newRecallTuning;
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (weapon == null)

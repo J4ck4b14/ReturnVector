@@ -1,6 +1,8 @@
 using ReturnVector.Enemies;
 using UnityEngine;
 
+// Script summary: Procedural attack pose and telegraph shared by the prototype enemies. The gameplay root stays untouched so CharacterController dimensions remain stable.
+
 namespace ReturnVector.GameFeel
 {
     public enum EnemyAttackStage
@@ -36,6 +38,7 @@ namespace ReturnVector.GameFeel
     [DisallowMultipleComponent]
     public sealed class EnemyAttackFeedback : MonoBehaviour
     {
+        // Feedback variables
         [SerializeField] private Transform visualRoot;
         [SerializeField] private Transform radialMarker;
         [SerializeField] private Transform lineMarker;
@@ -49,6 +52,9 @@ namespace ReturnVector.GameFeel
         private Vector3 radialBaseScale;
         private Vector3 lineBaseScale;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             Transform newVisualRoot,
             IEnemyAttackSource newSource,
@@ -81,6 +87,9 @@ namespace ReturnVector.GameFeel
             SetMarkerActive(lineMarker, false);
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             SetMarkerActive(
@@ -104,6 +113,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (visualRoot == null || source == null)
@@ -173,6 +185,9 @@ namespace ReturnVector.GameFeel
             UpdateMarker(lineMarker, line, progress, true, 1f);
         }
 
+        /// <summary>
+        /// Applies the melee pose.
+        /// </summary>
         private void ApplyMeleePose(
             EnemyAttackStage stage,
             float progress,
@@ -192,6 +207,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Applies the shield pose.
+        /// </summary>
         private void ApplyShieldPose(
             EnemyAttackStage stage,
             float progress,
@@ -214,6 +232,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Applies the ranged pose.
+        /// </summary>
         private void ApplyRangedPose(
             EnemyAttackStage stage,
             float progress,
@@ -234,6 +255,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Applies the boss slam pose.
+        /// </summary>
         private void ApplyBossSlamPose(
             EnemyAttackStage stage,
             float progress,
@@ -254,6 +278,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Applies the boss charge pose.
+        /// </summary>
         private void ApplyBossChargePose(
             EnemyAttackStage stage,
             float progress,
@@ -280,6 +307,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Applies the boss shockwave pose.
+        /// </summary>
         private void ApplyBossShockwavePose(
             EnemyAttackStage stage,
             float progress,
@@ -300,6 +330,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Updates the marker.
+        /// </summary>
         private void UpdateMarker(
             Transform marker,
             bool active,
@@ -342,6 +375,9 @@ namespace ReturnVector.GameFeel
             marker.localScale = scale;
         }
 
+        /// <summary>
+        /// Sets the marker active.
+        /// </summary>
         private static void SetMarkerActive(Transform marker, bool active)
         {
             if (marker != null)
@@ -350,6 +386,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Returns the smooth.
+        /// </summary>
         private static float Smooth(float value)
         {
             return value * value * (3f - 2f * value);

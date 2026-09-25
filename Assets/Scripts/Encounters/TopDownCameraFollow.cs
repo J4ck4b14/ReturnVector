@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Smooth top-down follow camera with additive combat feedback offsets.
+
 namespace ReturnVector.Encounters
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace ReturnVector.Encounters
     [DisallowMultipleComponent]
     public sealed class TopDownCameraFollow : MonoBehaviour
     {
+        // Encounter variables
         [SerializeField] private Transform target;
         [SerializeField] private Vector3 worldOffset =
             new Vector3(0f, 13f, -7f);
@@ -19,6 +22,9 @@ namespace ReturnVector.Encounters
         private float baseOrthographicSize;
         private float targetOrthographicSize;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             attachedCamera =
@@ -34,6 +40,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             Transform newTarget,
             Vector3 offset,
@@ -60,6 +69,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Applies the feedback.
+        /// </summary>
         public void ApplyFeedback(
             Vector3 positionOffset,
             float orthographicSizeOffset)
@@ -71,6 +83,9 @@ namespace ReturnVector.Encounters
                 orthographicSizeOffset;
         }
 
+        /// <summary>
+        /// Sets the arena framing.
+        /// </summary>
         public void SetArenaFraming(
             float orthographicSize,
             bool immediate = false)
@@ -85,6 +100,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Updates presentation after regular frame logic has completed.
+        /// </summary>
         private void LateUpdate()
         {
             if (target == null)

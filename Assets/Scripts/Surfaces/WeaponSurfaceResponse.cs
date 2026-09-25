@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Resolved response values consumed by the weapon motors.
+
 namespace ReturnVector.Surfaces
 {
     /// <summary>
@@ -7,12 +9,16 @@ namespace ReturnVector.Surfaces
     /// </summary>
     public readonly struct WeaponSurfaceResponse
     {
+        // Surface variables
         public readonly WeaponSurfaceKind Kind;
         public readonly bool Blocks;
         public readonly Vector3 OutgoingDirection;
         public readonly float SpeedRetention;
         public readonly float DistanceCost;
 
+        /// <summary>
+        /// Creates a new WeaponSurfaceResponse with the supplied values.
+        /// </summary>
         public WeaponSurfaceResponse(
             WeaponSurfaceKind kind,
             bool blocks,

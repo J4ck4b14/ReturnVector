@@ -1,6 +1,8 @@
 using ReturnVector.Encounters;
 using UnityEngine;
 
+// Script summary: Accumulates short camera impulses and framing changes from combat events.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace ReturnVector.GameFeel
     [DisallowMultipleComponent]
     public sealed class RVCameraFeedback : MonoBehaviour
     {
+        // Feedback variables
         [SerializeField] private TopDownCameraFollow follow;
         [SerializeField] private RVGameFeelProfile profile;
 
@@ -22,12 +25,17 @@ namespace ReturnVector.GameFeel
         private float directionalAmplitude;
         private Vector3 directionalVector;
 
+        // Camera variables
         private float zoomPunch;
 
+        // Weapon variables
         private bool recallActive;
         private float recallBlend;
         private float smoothedZoom;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             TopDownCameraFollow newFollow,
             RVGameFeelProfile newProfile)
@@ -36,11 +44,17 @@ namespace ReturnVector.GameFeel
             profile = newProfile;
         }
 
+        /// <summary>
+        /// Sets the recall active.
+        /// </summary>
         public void SetRecallActive(bool active)
         {
             recallActive = active;
         }
 
+        /// <summary>
+        /// Sets the arena framing.
+        /// </summary>
         public void SetArenaFraming(
             float orthographicSize,
             bool immediate = false)
@@ -50,6 +64,9 @@ namespace ReturnVector.GameFeel
                 immediate);
         }
 
+        /// <summary>
+        /// Adds a short camera shake and framing impulse.
+        /// </summary>
         public void Impulse(
             float amplitude,
             float duration,
@@ -76,6 +93,9 @@ namespace ReturnVector.GameFeel
                     Mathf.Max(0f, zoomAmount));
         }
 
+        /// <summary>
+        /// Adds a camera impulse biased toward the supplied world direction.
+        /// </summary>
         public void DirectionalImpulse(
             Vector3 worldDirection,
             float amplitude,
@@ -118,6 +138,9 @@ namespace ReturnVector.GameFeel
                     Mathf.Max(0f, zoomAmount));
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (follow == null ||
@@ -237,6 +260,9 @@ namespace ReturnVector.GameFeel
                 smoothedZoom);
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             if (follow != null)

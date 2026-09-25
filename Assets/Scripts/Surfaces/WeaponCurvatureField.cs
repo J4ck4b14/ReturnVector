@@ -1,6 +1,8 @@
 using ReturnVector.Combat;
 using UnityEngine;
 
+// Script summary: Authored trigger volume that continuously steers weapon travel direction. Its behavior is deterministic: same entry direction, position and timestep produce the same turn.
+
 namespace ReturnVector.Surfaces
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace ReturnVector.Surfaces
     [DisallowMultipleComponent]
     public sealed class WeaponCurvatureField : MonoBehaviour
     {
+        // Surface variables
         [SerializeField] private WeaponCurvatureMode mode =
             WeaponCurvatureMode.GuideDirection;
         [SerializeField] private Vector3 localGuideDirection = Vector3.forward;
@@ -20,6 +23,9 @@ namespace ReturnVector.Surfaces
         public WeaponCurvatureMode Mode => mode;
         public float SteeringDegreesPerSecond => steeringDegreesPerSecond;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             WeaponCurvatureMode newMode,
             Vector3 newLocalGuideDirection,
@@ -38,6 +44,9 @@ namespace ReturnVector.Surfaces
             affectsRecall = recall;
         }
 
+        /// <summary>
+        /// Checks whether the authored surface response applies to the requested weapon phase.
+        /// </summary>
         public bool AppliesTo(AttackPhase phase)
         {
             return phase == AttackPhase.Outbound
@@ -45,6 +54,9 @@ namespace ReturnVector.Surfaces
                 : phase == AttackPhase.Recall && affectsRecall;
         }
 
+        /// <summary>
+        /// Returns the direction a curvature field wants the weapon to follow.
+        /// </summary>
         public Vector3 DesiredDirection(Vector3 worldPosition)
         {
             if (mode == WeaponCurvatureMode.GuideDirection)
@@ -81,6 +93,9 @@ namespace ReturnVector.Surfaces
             return tangent.normalized;
         }
 
+        /// <summary>
+        /// Applies the configured surface or curvature response.
+        /// </summary>
         public Vector3 Apply(
             Vector3 worldPosition,
             Vector3 currentDirection,

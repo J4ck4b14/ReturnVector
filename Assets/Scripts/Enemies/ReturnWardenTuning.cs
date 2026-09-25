@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Serialization;
 
+// Script summary: Movement, attack and phase values for the Return Warden.
+
 namespace ReturnVector.Enemies
 {
     [CreateAssetMenu(
@@ -11,6 +13,7 @@ namespace ReturnVector.Enemies
     /// </summary>
     public sealed class ReturnWardenTuning : ScriptableObject
     {
+        // Health and weapon relationship variables
         [Header("Health and weapon relationship")]
         [Min(1f)] public float MaxHealth = 12f;
         [Range(0f, 1f)] public float OutboundDamageMultiplier = 0.30f;
@@ -18,6 +21,7 @@ namespace ReturnVector.Enemies
         [Min(0.1f)] public float PinRepositionDistance = 2.8f;
         [Min(0.25f)] public float PinFailSafeSeconds = 6f;
 
+        // Warden phase two variables
         [Header("Phase two")]
         [Range(0.1f, 0.9f)] public float PhaseTwoHealthRatio = 0.50f;
         [Min(0.1f)] public float PhaseTwoPinDistanceMultiplier = 1.25f;
@@ -28,6 +32,7 @@ namespace ReturnVector.Enemies
         [Min(0.1f)] public float PhaseTwoDamageMultiplier = 1.15f;
         [Min(0.25f)] public float PhaseTransitionDuration = 2.35f;
 
+        // Warden phase three variables
         [Header("Phase three")]
         [Min(0.1f)] public float PhaseThreeSpeedMultiplier = 1.08f;
         [Range(0.2f, 1f)] public float PhaseThreeRecoveryMultiplier = 0.88f;
@@ -36,11 +41,13 @@ namespace ReturnVector.Enemies
         [Min(0.1f)] public float PhaseThreeDamageMultiplier = 1.20f;
         [Min(0.25f)] public float PhaseThreeTransitionDuration = 2.65f;
 
+        // Warden movement variables
         [Header("Movement")]
         [Min(0f)] public float BaseMoveSpeed = 1.85f;
         [Min(0f)] public float PinnedPressureSpeed = 2.75f;
         [Min(0f)] public float PreferredDistance = 1.8f;
 
+        // Warden slam variables
         [Header("Slam")]
         [Min(0f)] public float SlamRange = 2.15f;
         [Min(0f)] public float SlamDamage = 2.2f;
@@ -50,6 +57,7 @@ namespace ReturnVector.Enemies
         [Min(0f)] public float SlamRecovery = 0.82f;
         [Min(0f)] public float SlamCooldown = 1.45f;
 
+        // Warden charge variables
         [Header("Charge")]
         [Min(0f)] public float ChargeTriggerRange = 7.5f;
         [Min(0f)] public float ChargeWindup = 0.72f;
@@ -61,6 +69,7 @@ namespace ReturnVector.Enemies
         [Min(0f)] public float ChargeRecovery = 0.72f;
         [Min(0f)] public float ChargeCooldown = 1.9f;
 
+        // Warden shockwave variables
         [Header("Shockwave")]
         [Min(0f)] public float ShockwaveRange = 4.25f;
         [Min(0f)] public float ShockwaveDamage = 3.0f;
@@ -69,6 +78,9 @@ namespace ReturnVector.Enemies
         [Min(0f)] public float ShockwaveRecovery = 0.92f;
         [Min(0f)] public float ShockwaveCooldown = 2.3f;
 
+        /// <summary>
+        /// Restores the authored default tuning values.
+        /// </summary>
         public void ResetDefaults()
         {
             MaxHealth = 12f;

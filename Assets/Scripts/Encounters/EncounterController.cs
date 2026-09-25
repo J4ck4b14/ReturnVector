@@ -4,6 +4,8 @@ using ReturnVector.Core;
 using ReturnVector.Enemies;
 using UnityEngine;
 
+// Script summary: Runs one authored encounter from activation through its final phase.
+
 namespace ReturnVector.Encounters
 {
     /// <summary>
@@ -12,6 +14,10 @@ namespace ReturnVector.Encounters
     [DisallowMultipleComponent]
     public sealed class EncounterController : MonoBehaviour
     {
+        // Encounter variables
+        private const float ExtremePressureDelay = 18f;
+        private const float ExtremeWarningSeconds = 1.25f;
+
         [SerializeField] private EncounterDefinition definition;
         [SerializeField] private EncounterEnemyFactory enemyFactory;
         [SerializeField] private EncounterGate entranceGate;
@@ -25,6 +31,11 @@ namespace ReturnVector.Encounters
         private int currentPhaseIndex = -1;
         private float phaseElapsed;
         private int liveEnemyCount;
+
+        private bool extremePressureCommitted;
+        private float extremeWarningRemaining;
+        private EncounterSpawnEntry extremeReinforcement;
+        private GameObject extremeWarning;
 
         public EncounterDefinition Definition => definition;
         public EncounterState State { get; private set; } =
@@ -76,6 +87,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             if (enemyContainer == null)
@@ -89,6 +103,9 @@ namespace ReturnVector.Encounters
             PrepareWaitingState();
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             EncounterDefinition newDefinition,
             EncounterEnemyFactory newEnemyFactory,
@@ -109,6 +126,9 @@ namespace ReturnVector.Encounters
             PrepareWaitingState();
         }
 
+        /// <summary>
+        /// Starts the encounter.
+        /// </summary>
         public void StartEncounter()
         {
             if (State != EncounterState.Waiting ||
@@ -119,7 +139,6 @@ namespace ReturnVector.Encounters
                 return;
             }
 
-            // The room closes as soon as the trigger commits the player to the encounter.
             State = EncounterState.Active;
             entranceGate?.SetOpen(false);
             exitGate?.SetOpen(false);
@@ -128,6 +147,9 @@ namespace ReturnVector.Encounters
             BeginPhase(0);
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (State != EncounterState.Active)
@@ -142,13 +164,13 @@ namespace ReturnVector.Encounters
                 return;
             }
 
-            // Negative elapsed time represents the phase's authored opening delay.
             phaseElapsed += Time.deltaTime;
 
             if (phaseElapsed >= 0f)
             {
                 SpawnDueEntries(phase);
                 PruneDeadEnemies();
+                TickExtremePressure(phase);
             }
 
             if (!EncounterTimelineMath.CanAdvancePhase(
@@ -170,8 +192,16 @@ namespace ReturnVector.Encounters
             BeginPhase(next);
         }
 
+        /// <summary>
+        /// Starts the phase.
+        /// </summary>
         private void BeginPhase(int phaseIndex)
         {
+            ClearExtremeWarning();
+            extremePressureCommitted = false;
+            extremeWarningRemaining = 0f;
+            extremeReinforcement = null;
+
             currentPhaseIndex = phaseIndex;
 
             EncounterPhaseDefinition phase =
@@ -187,7 +217,6 @@ namespace ReturnVector.Encounters
                 phase.Spawns ??
                 Array.Empty<EncounterSpawnEntry>();
 
-            // Spawn bookkeeping is rebuilt per phase; each entry may carry its own delay.
             spawnedEntries =
                 new bool[spawns.Length];
 
@@ -199,6 +228,9 @@ namespace ReturnVector.Encounters
                 currentPhaseIndex);
         }
 
+        /// <summary>
+        /// Spawns the due entries.
+        /// </summary>
         private void SpawnDueEntries(
             EncounterPhaseDefinition phase)
         {
@@ -238,6 +270,179 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Advances the the extreme pressure state for the current frame.
+        /// </summary>
+        private void TickExtremePressure(
+            EncounterPhaseDefinition phase)
+        {
+            if (!GameDifficulty.IsExtreme ||
+                enemyFactory == null ||
+                phase == null ||
+                ContainsWarden(phase) ||
+                !AllEntriesSpawned())
+            {
+                return;
+            }
+
+            if (extremeReinforcement != null)
+            {
+                extremeWarningRemaining -= Time.deltaTime;
+
+                if (extremeWarningRemaining > 0f)
+                {
+                    return;
+                }
+
+                ClearExtremeWarning();
+                Spawn(extremeReinforcement);
+                extremeReinforcement = null;
+                return;
+            }
+
+            if (extremePressureCommitted ||
+                liveEnemyCount < 2 ||
+                phaseElapsed < ExtremePressureDelay)
+            {
+                return;
+            }
+
+            EncounterSpawnEntry reinforcement =
+                BuildExtremeReinforcement(phase);
+
+            if (reinforcement == null)
+            {
+                extremePressureCommitted = true;
+                return;
+            }
+
+            extremePressureCommitted = true;
+            extremeReinforcement = reinforcement;
+            extremeWarningRemaining = ExtremeWarningSeconds;
+
+            Vector3 worldPosition =
+                transform.TransformPoint(
+                    reinforcement.LocalPosition);
+
+            extremeWarning =
+                enemyFactory.CreatePressureWarning(
+                    worldPosition);
+        }
+
+        /// <summary>
+        /// Builds the extreme reinforcement.
+        /// </summary>
+        private EncounterSpawnEntry BuildExtremeReinforcement(
+            EncounterPhaseDefinition phase)
+        {
+            EncounterSpawnEntry[] spawns =
+                phase.Spawns ??
+                Array.Empty<EncounterSpawnEntry>();
+
+            if (spawns.Length == 0)
+            {
+                return null;
+            }
+
+            bool hasRusher = false;
+            bool hasShielded = false;
+            bool hasController = false;
+
+            EncounterSpawnEntry farthest = null;
+            float farthestDistance = float.NegativeInfinity;
+            Transform player = enemyFactory.Player;
+
+            for (int i = 0; i < spawns.Length; i++)
+            {
+                EncounterSpawnEntry entry = spawns[i];
+                if (entry == null ||
+                    entry.Archetype == EnemyArchetype.ReturnWarden)
+                {
+                    continue;
+                }
+
+                hasRusher |= entry.Archetype == EnemyArchetype.Rusher;
+                hasShielded |= entry.Archetype == EnemyArchetype.Shielded;
+                hasController |= entry.Archetype == EnemyArchetype.Controller;
+
+                Vector3 world =
+                    transform.TransformPoint(
+                        entry.LocalPosition);
+
+                float distance =
+                    player != null
+                        ? FlatDistance(world, player.position)
+                        : i;
+
+                if (distance > farthestDistance)
+                {
+                    farthestDistance = distance;
+                    farthest = entry;
+                }
+            }
+
+            if (farthest == null)
+            {
+                return null;
+            }
+
+            EnemyArchetype archetype;
+
+            if (hasRusher && hasController)
+            {
+                archetype = EnemyArchetype.Shielded;
+            }
+            else if (hasRusher)
+            {
+                archetype = EnemyArchetype.Controller;
+            }
+            else if (hasController)
+            {
+                archetype = EnemyArchetype.Rusher;
+            }
+            else if (hasShielded)
+            {
+                archetype = EnemyArchetype.Controller;
+            }
+            else
+            {
+                archetype = EnemyArchetype.Rusher;
+            }
+
+            return new EncounterSpawnEntry(
+                archetype,
+                farthest.LocalPosition,
+                0f,
+                1f,
+                "Extreme pressure");
+        }
+
+        /// <summary>
+        /// Checks whether the current encounter definition contains the Return Warden.
+        /// </summary>
+        private static bool ContainsWarden(
+            EncounterPhaseDefinition phase)
+        {
+            EncounterSpawnEntry[] spawns =
+                phase.Spawns ??
+                Array.Empty<EncounterSpawnEntry>();
+
+            for (int i = 0; i < spawns.Length; i++)
+            {
+                if (spawns[i] != null &&
+                    spawns[i].Archetype ==
+                    EnemyArchetype.ReturnWarden)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Registers the runtime enemy with the owning system.
+        /// </summary>
         public void RegisterRuntimeEnemy(
             EnemyHealth enemy)
         {
@@ -254,6 +459,9 @@ namespace ReturnVector.Encounters
             EnemySpawned?.Invoke(this, enemy);
         }
 
+        /// <summary>
+        /// Spawns the requested enemy archetype at the supplied world position.
+        /// </summary>
         private void Spawn(
             EncounterSpawnEntry entry)
         {
@@ -287,6 +495,9 @@ namespace ReturnVector.Encounters
             EnemySpawned?.Invoke(this, enemy);
         }
 
+        /// <summary>
+        /// Responds when an enemy dies.
+        /// </summary>
         private void HandleEnemyDeath(
             ReturnVector.Combat.DamageInfo damage)
         {
@@ -297,7 +508,9 @@ namespace ReturnVector.Encounters
             PruneDeadEnemies();
         }
 
-        // Recount from the tracked set so destroyed GameObjects and normal deaths converge cleanly.
+        /// <summary>
+        /// Removes destroyed enemy references from the active encounter list.
+        /// </summary>
         private void PruneDeadEnemies()
         {
             int living = 0;
@@ -328,6 +541,9 @@ namespace ReturnVector.Encounters
             liveEnemyCount = living;
         }
 
+        /// <summary>
+        /// Checks whether every spawn entry in the current phase has been issued.
+        /// </summary>
         private bool AllEntriesSpawned()
         {
             for (int i = 0;
@@ -343,6 +559,9 @@ namespace ReturnVector.Encounters
             return true;
         }
 
+        /// <summary>
+        /// Completes the encounter and updates the owning state.
+        /// </summary>
         private void CompleteEncounter()
         {
             if (State == EncounterState.Complete)
@@ -350,6 +569,7 @@ namespace ReturnVector.Encounters
                 return;
             }
 
+            ClearExtremeWarning();
             State = EncounterState.Complete;
             liveEnemyCount = 0;
 
@@ -359,6 +579,9 @@ namespace ReturnVector.Encounters
             Completed?.Invoke(this);
         }
 
+        /// <summary>
+        /// Resets phase bookkeeping while the encounter waits to begin.
+        /// </summary>
         private void PrepareWaitingState()
         {
             if (State == EncounterState.Active)
@@ -366,14 +589,42 @@ namespace ReturnVector.Encounters
                 return;
             }
 
+            ClearExtremeWarning();
             State = EncounterState.Waiting;
             currentPhaseIndex = -1;
             phaseElapsed = 0f;
             liveEnemyCount = 0;
             spawnedEntries = Array.Empty<bool>();
+            extremePressureCommitted = false;
+            extremeWarningRemaining = 0f;
+            extremeReinforcement = null;
 
             entranceGate?.SetOpen(true);
             exitGate?.SetOpen(false);
+        }
+
+        /// <summary>
+        /// Removes the active Extreme-mode reinforcement warning.
+        /// </summary>
+        private void ClearExtremeWarning()
+        {
+            if (extremeWarning != null)
+            {
+                Destroy(extremeWarning);
+                extremeWarning = null;
+            }
+        }
+
+        /// <summary>
+        /// Returns the flat distance.
+        /// </summary>
+        private static float FlatDistance(
+            Vector3 a,
+            Vector3 b)
+        {
+            a.y = 0f;
+            b.y = 0f;
+            return Vector3.Distance(a, b);
         }
     }
 }

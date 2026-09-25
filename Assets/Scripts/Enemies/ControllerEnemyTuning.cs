@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Serialization;
 
+// Script summary: Movement and ranged-attack values for the Controller.
+
 namespace ReturnVector.Enemies
 {
     [CreateAssetMenu(
@@ -11,6 +13,7 @@ namespace ReturnVector.Enemies
     /// </summary>
     public sealed class ControllerEnemyTuning : ScriptableObject
     {
+        // Enemy variables
         [Min(0f)] public float PreferredDistance = 7f;
         [Min(0f)] public float MoveSpeed = 2.5f;
         [Min(0f)] public float FireInterval = 2.2f;
@@ -23,6 +26,9 @@ namespace ReturnVector.Enemies
         [FormerlySerializedAs("DeflectionDegrees")]
         [Min(0f)] public float ProjectileDamage = 1.15f;
 
+        /// <summary>
+        /// Restores the authored default tuning values.
+        /// </summary>
         public void ResetDefaults()
         {
             PreferredDistance = 7f;

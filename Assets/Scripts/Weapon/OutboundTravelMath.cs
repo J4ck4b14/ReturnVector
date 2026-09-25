@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Pure distance and speed helpers for outbound weapon simulation.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -7,6 +9,9 @@ namespace ReturnVector.Weapon
     /// </summary>
     public static class OutboundTravelMath
     {
+        /// <summary>
+        /// Returns a movement distance clamped to the remaining travel distance.
+        /// </summary>
         public static float StepDistance(
             float speed,
             float deltaTime,

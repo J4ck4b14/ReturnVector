@@ -1,3 +1,6 @@
+
+// Script summary: Read-only combat and movement state exposed to AI and encounter systems.
+
 namespace ReturnVector.Player
 {
     /// <summary>
@@ -5,6 +8,7 @@ namespace ReturnVector.Player
     /// </summary>
     public readonly struct PlayerTacticalSnapshot
     {
+        // Player variables
         public readonly PlayerCombatMode CombatMode;
         public readonly PlayerMovementState MovementState;
 
@@ -12,6 +16,9 @@ namespace ReturnVector.Player
         public bool IsEvading => MovementState == PlayerMovementState.Dodging;
         public bool IsExposed => IsWeaponAway && !IsEvading;
 
+        /// <summary>
+        /// Creates a new PlayerTacticalSnapshot with the supplied values.
+        /// </summary>
         public PlayerTacticalSnapshot(
             PlayerCombatMode combatMode,
             PlayerMovementState movementState)

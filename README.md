@@ -23,6 +23,7 @@ This project was made in under a week and it still contains some bugs.
 | Recall | Right Mouse Button | Left Trigger |
 | Dodge | Space | South Button |
 | Restart after victory / death | R | Start |
+| Return to menu after victory / death | Q | — |
 
 ## Core loop
 
@@ -30,7 +31,9 @@ This project was made in under a week and it still contains some bugs.
 
 The projectile is transform-driven and uses controlled casts rather than Rigidbody propulsion. Surface responses are authored and deterministic so the first interaction is predictable.
 
-Enemies use visible anticipation and recovery windows. The ranged archetype commits to a shot line aimed at the player, while the Return Warden escalates through three phases: an open arena, a compressed solid-walled phase, and a final full-health reinforcement phase.
+Enemies route around blocking geometry with a small grid-based A* solver and use visible anticipation and recovery windows. The ranged archetype commits to a shot line aimed at the player.
+
+Five difficulty levels change pressure rather than the core weapon rules. Very Easy is intended for people with little or no action-game experience, Easy for casual players, Normal as the standard run, and Hard preserves the authored combat values. Extreme keeps Hard's raw numbers but adds coordinated return-line pressure and telegraphed reinforcements. The Return Warden uses one phase on Very Easy/Easy, two on Normal, and all three phases on Hard/Extreme.
 
 ## Project structure
 
@@ -64,7 +67,7 @@ ReturnVector
 
 Edit Mode tests live in `Assets/Tests/EditMode`.
 
-They cover deterministic travel math, state machines, surface responses, enemy hit rules, encounter timing, movement helpers, collision placement, and recall constraints.
+They cover deterministic travel math, state machines, surface responses, enemy hit rules, encounter timing, movement helpers, A* routing, difficulty rules, collision placement, and recall constraints.
 
 ## Notes
 

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Script summary: Small grid A* solver used by enemy movement when a straight route is blocked.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>
@@ -9,9 +11,11 @@ namespace ReturnVector.Enemies
     /// </summary>
     public static class AStarPathfinder
     {
+        // Enemy variables
         private static readonly Collider[] overlapBuffer = new Collider[32];
         private static readonly RaycastHit[] castBuffer = new RaycastHit[32];
 
+        // Navigation variables
         private static readonly Vector2Int[] neighbourOffsets =
         {
             new Vector2Int(1, 0),
@@ -24,6 +28,9 @@ namespace ReturnVector.Enemies
             new Vector2Int(-1, -1)
         };
 
+        /// <summary>
+        /// Attempts to find an A* route between the supplied world positions.
+        /// </summary>
         public static bool TryFindPath(
             Vector3 start,
             Vector3 goal,
@@ -214,6 +221,9 @@ namespace ReturnVector.Enemies
             return false;
         }
 
+        /// <summary>
+        /// Checks whether the navigation segment is unobstructed.
+        /// </summary>
         public static bool HasClearSegment(
             Vector3 start,
             Vector3 end,
@@ -251,6 +261,9 @@ namespace ReturnVector.Enemies
             return true;
         }
 
+        /// <summary>
+        /// Returns the cached blocked state for a navigation cell.
+        /// </summary>
         private static bool IsBlockedCached(
             int index,
             Vector2Int cell,
@@ -275,6 +288,9 @@ namespace ReturnVector.Enemies
             return blocked;
         }
 
+        /// <summary>
+        /// Checks whether the supplied navigation cell is blocked.
+        /// </summary>
         private static bool IsBlocked(
             Vector3 world,
             float radius,
@@ -298,6 +314,9 @@ namespace ReturnVector.Enemies
             return false;
         }
 
+        /// <summary>
+        /// Checks whether a collider should block enemy navigation.
+        /// </summary>
         private static bool IsBlocking(
             Collider collider,
             Transform ignoreRoot)
@@ -322,6 +341,9 @@ namespace ReturnVector.Enemies
             return true;
         }
 
+        /// <summary>
+        /// Finds the lowest-cost open node in the current A* search.
+        /// </summary>
         private static int FindBestOpenSlot(
             List<int> open,
             float[] g,
@@ -351,6 +373,9 @@ namespace ReturnVector.Enemies
             return bestSlot;
         }
 
+        /// <summary>
+        /// Returns the octile-grid heuristic used by A*.
+        /// </summary>
         private static float Octile(Vector2Int a, Vector2Int b)
         {
             int dx = Mathf.Abs(a.x - b.x);
@@ -360,6 +385,9 @@ namespace ReturnVector.Enemies
             return diagonal * 1.41421356f + straight;
         }
 
+        /// <summary>
+        /// Builds world-space waypoints from the completed A* parent chain.
+        /// </summary>
         private static void ReconstructPath(
             int[] parent,
             int current,
@@ -384,6 +412,9 @@ namespace ReturnVector.Enemies
             result.Reverse();
         }
 
+        /// <summary>
+        /// Returns the world to cell.
+        /// </summary>
         private static Vector2Int WorldToCell(
             Vector3 world,
             float minX,
@@ -405,6 +436,9 @@ namespace ReturnVector.Enemies
             return new Vector2Int(x, z);
         }
 
+        /// <summary>
+        /// Returns the cell to world.
+        /// </summary>
         private static Vector3 CellToWorld(
             Vector2Int cell,
             float minX,
@@ -418,11 +452,17 @@ namespace ReturnVector.Enemies
                 minZ + cell.y * cellSize);
         }
 
+        /// <summary>
+        /// Converts a grid coordinate into the flat navigation-array index.
+        /// </summary>
         private static int ToIndex(int x, int y, int width)
         {
             return y * width + x;
         }
 
+        /// <summary>
+        /// Converts a flat navigation-array index back into a grid coordinate.
+        /// </summary>
         private static Vector2Int FromIndex(int index, int width)
         {
             return new Vector2Int(index % width, index / width);

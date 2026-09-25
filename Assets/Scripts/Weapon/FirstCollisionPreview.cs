@@ -1,6 +1,8 @@
 using ReturnVector.Player;
 using UnityEngine;
 
+// Script summary: Shows the straight outbound segment up to the first relevant interaction.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -9,15 +11,21 @@ namespace ReturnVector.Weapon
     [RequireComponent(typeof(LineRenderer))]
     public sealed class FirstCollisionPreview : MonoBehaviour
     {
+        // Collision variables
         private const int HitBufferSize = 32;
 
+        // Weapon variables
         [SerializeField] private WeaponController weapon;
         [SerializeField] private WorldAimProvider aim;
         [SerializeField] private WeaponThrowTuning tuning;
         [SerializeField] private LineRenderer line;
 
+        // Collision variables
         private readonly RaycastHit[] hitBuffer = new RaycastHit[HitBufferSize];
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             WeaponController newWeapon,
             WorldAimProvider newAim,
@@ -31,6 +39,9 @@ namespace ReturnVector.Weapon
             ApplyLineSettings();
         }
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             if (line == null)
@@ -41,6 +52,9 @@ namespace ReturnVector.Weapon
             ApplyLineSettings();
         }
 
+        /// <summary>
+        /// Updates presentation after regular frame logic has completed.
+        /// </summary>
         private void LateUpdate()
         {
             if (weapon == null ||
@@ -77,6 +91,9 @@ namespace ReturnVector.Weapon
             SetVisible(true);
         }
 
+        /// <summary>
+        /// Finds the first interaction point used by the outbound preview line.
+        /// </summary>
         private Vector3 FindPreviewEnd(
             Vector3 origin,
             Vector3 direction)
@@ -112,6 +129,9 @@ namespace ReturnVector.Weapon
             return origin + direction * tuning.MaxDistance;
         }
 
+        /// <summary>
+        /// Applies material and width settings to the preview LineRenderer.
+        /// </summary>
         private void ApplyLineSettings()
         {
             if (line == null || tuning == null)
@@ -125,6 +145,9 @@ namespace ReturnVector.Weapon
             line.positionCount = 0;
         }
 
+        /// <summary>
+        /// Sets the visible.
+        /// </summary>
         private void SetVisible(bool visible)
         {
             if (line != null)

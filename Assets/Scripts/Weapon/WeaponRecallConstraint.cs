@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 
+// Script summary: Temporary recall lock that releases after sufficient player displacement or its fail-safe window.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -9,6 +11,7 @@ namespace ReturnVector.Weapon
     [DisallowMultipleComponent]
     public sealed class WeaponRecallConstraint : MonoBehaviour
     {
+        // Weapon variables
         [SerializeField] private WeaponController weapon;
 
         private Transform owner;
@@ -52,11 +55,17 @@ namespace ReturnVector.Weapon
         public event Action Pinned;
         public event Action Released;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             ResolveOwner();
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (!pinned)
@@ -76,6 +85,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             WeaponController newWeapon)
         {
@@ -83,6 +95,9 @@ namespace ReturnVector.Weapon
             ResolveOwner();
         }
 
+        /// <summary>
+        /// Pins recall until the player satisfies the required reposition distance or fail-safe.
+        /// </summary>
         public void Pin(
             float repositionDistance,
             float failSafeSeconds)
@@ -111,6 +126,9 @@ namespace ReturnVector.Weapon
             Pinned?.Invoke();
         }
 
+        /// <summary>
+        /// Releases the active recall constraint.
+        /// </summary>
         public void Release()
         {
             if (!pinned)
@@ -123,6 +141,9 @@ namespace ReturnVector.Weapon
             Released?.Invoke();
         }
 
+        /// <summary>
+        /// Resolves the owner.
+        /// </summary>
         private void ResolveOwner()
         {
             owner =

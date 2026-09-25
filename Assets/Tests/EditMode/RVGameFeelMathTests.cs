@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using ReturnVector.GameFeel;
 
+// Script summary: Edit Mode coverage for RVGameFeelMath.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -8,6 +10,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class RVGameFeelMathTests
     {
+        /// <summary>
+        /// Verifies that impact envelope starts at one.
+        /// </summary>
         [Test]
         public void ImpactEnvelope_StartsAtOne()
         {
@@ -22,6 +27,9 @@ namespace ReturnVector.Tests
                 0.0001f);
         }
 
+        /// <summary>
+        /// Verifies that impact envelope decays quadratically.
+        /// </summary>
         [Test]
         public void ImpactEnvelope_DecaysQuadratically()
         {
@@ -36,6 +44,9 @@ namespace ReturnVector.Tests
                 0.0001f);
         }
 
+        /// <summary>
+        /// Verifies that exponential blend stays inside zero one.
+        /// </summary>
         [Test]
         public void ExponentialBlend_StaysInsideZeroOne()
         {
@@ -53,6 +64,9 @@ namespace ReturnVector.Tests
                 Is.LessThan(1f));
         }
 
+        /// <summary>
+        /// Verifies that zero delta produces no blend.
+        /// </summary>
         [Test]
         public void ZeroDelta_ProducesNoBlend()
         {

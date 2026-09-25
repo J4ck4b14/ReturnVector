@@ -1,3 +1,6 @@
+
+// Script summary: Movement states exposed to gameplay and animation.
+
 namespace ReturnVector.Player
 {
     /// <summary>

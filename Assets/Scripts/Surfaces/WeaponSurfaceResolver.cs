@@ -1,6 +1,8 @@
 using ReturnVector.Combat;
 using UnityEngine;
 
+// Script summary: Resolves the effective surface response for a collider and attack phase.
+
 namespace ReturnVector.Surfaces
 {
     /// <summary>
@@ -8,6 +10,9 @@ namespace ReturnVector.Surfaces
     /// </summary>
     public static class WeaponSurfaceResolver
     {
+        /// <summary>
+        /// Attempts to resolve an authored weapon-surface profile from the supplied collider.
+        /// </summary>
         public static bool TryGetProfile(
             Collider collider,
             out WeaponSurfaceProfile profile)
@@ -32,6 +37,9 @@ namespace ReturnVector.Surfaces
             return true;
         }
 
+        /// <summary>
+        /// Attempts to resolve the effective weapon-surface response.
+        /// </summary>
         public static bool TryResolve(
             Collider collider,
             Vector3 incomingDirection,

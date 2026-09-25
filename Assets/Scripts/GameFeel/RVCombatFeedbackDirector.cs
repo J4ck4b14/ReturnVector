@@ -2,6 +2,8 @@ using ReturnVector.Player;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Coordinates hit-stop, camera response and visual feedback from gameplay events.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace ReturnVector.GameFeel
     [DisallowMultipleComponent]
     public sealed class RVCombatFeedbackDirector : MonoBehaviour
     {
+        // Weapon variables
         [SerializeField] private RVGameFeelProfile profile;
         [SerializeField] private RVHitStopController hitStop;
         [SerializeField] private RVCameraFeedback cameraFeedback;
@@ -19,18 +22,28 @@ namespace ReturnVector.GameFeel
         [SerializeField] private RecallWeaponMotor recallMotor;
         [SerializeField] private PlayerHealth playerHealth;
 
+        // Feedback variables
         private bool bound;
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             Bind();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             Unbind();
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             RVGameFeelProfile newProfile,
             RVHitStopController newHitStop,
@@ -58,6 +71,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Subscribes this presentation component to its gameplay events.
+        /// </summary>
         private void Bind()
         {
             if (bound)
@@ -107,6 +123,9 @@ namespace ReturnVector.GameFeel
             bound = true;
         }
 
+        /// <summary>
+        /// Unsubscribes this presentation component from its gameplay events.
+        /// </summary>
         private void Unbind()
         {
             if (!bound)
@@ -156,6 +175,9 @@ namespace ReturnVector.GameFeel
             bound = false;
         }
 
+        /// <summary>
+        /// Responds when the outbound throw is released.
+        /// </summary>
         private void HandleThrowReleased(
             Vector3 direction)
         {
@@ -170,6 +192,9 @@ namespace ReturnVector.GameFeel
                 0f);
         }
 
+        /// <summary>
+        /// Responds when recall is requested.
+        /// </summary>
         private void HandleRecallRequested()
         {
             cameraFeedback?.SetRecallActive(
@@ -177,6 +202,9 @@ namespace ReturnVector.GameFeel
         }
 
         // Outbound feedback stays lighter so recall impacts retain the stronger beat.
+        /// <summary>
+        /// Responds to an outbound weapon impact.
+        /// </summary>
         private void HandleOutboundImpact(
             WeaponImpactInfo impact)
         {
@@ -223,6 +251,9 @@ namespace ReturnVector.GameFeel
         }
 
         // Recall carries the strongest directional hit response in the normal weapon cycle.
+        /// <summary>
+        /// Responds to a recall weapon impact.
+        /// </summary>
         private void HandleRecallImpact(
             WeaponImpactInfo impact)
         {
@@ -262,12 +293,18 @@ namespace ReturnVector.GameFeel
                 0f);
         }
 
+        /// <summary>
+        /// Responds when recall is blocked by geometry or an authored interaction.
+        /// </summary>
         private void HandleRecallBlocked()
         {
             cameraFeedback?.SetRecallActive(
                 false);
         }
 
+        /// <summary>
+        /// Responds when the baton enters its final catch movement.
+        /// </summary>
         private void HandleCatchStarted()
         {
             if (profile == null)
@@ -282,6 +319,9 @@ namespace ReturnVector.GameFeel
         }
 
         // Catch closes the attack cycle with a short camera and timing accent.
+        /// <summary>
+        /// Responds when the baton catch completes.
+        /// </summary>
         private void HandleCatchCompleted()
         {
             if (profile == null)
@@ -302,6 +342,9 @@ namespace ReturnVector.GameFeel
                 profile.CatchZoomPunch);
         }
 
+        /// <summary>
+        /// Responds when the player takes damage.
+        /// </summary>
         private void HandlePlayerDamaged(
             float health,
             ReturnVector.Combat.DamageInfo damage)

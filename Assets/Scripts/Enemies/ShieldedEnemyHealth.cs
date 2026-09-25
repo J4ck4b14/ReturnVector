@@ -3,11 +3,14 @@ using ReturnVector.Combat;
 using ReturnVector.Core;
 using UnityEngine;
 
+// Script summary: Contains the Shielded Enemy Health runtime logic.
+
 namespace ReturnVector.Enemies
 {
     [DisallowMultipleComponent]
     public sealed class ShieldedEnemyHealth : EnemyHealth
     {
+        // Enemy variables
         [SerializeField, Range(-1f, 1f)] private float frontalDotThreshold = 0.25f;
         [SerializeField, Min(1f)] private float rearRecallMultiplier = 1.6f;
         [SerializeField, Min(0f)] private float shieldDeflectionDegrees = 24f;
@@ -16,6 +19,9 @@ namespace ReturnVector.Enemies
         public event Action<DamageInfo> ShieldBlocked;
         public event Action<DamageInfo> RearRecallPunished;
 
+        /// <summary>
+        /// Configures the Shielded enemy health rules and shield facing source.
+        /// </summary>
         public void ConfigureShield(
             float health,
             float frontThreshold = 0.25f,
@@ -32,11 +38,17 @@ namespace ReturnVector.Enemies
             shieldActive = true;
         }
 
+        /// <summary>
+        /// Sets the shield active.
+        /// </summary>
         public void SetShieldActive(bool active)
         {
             shieldActive = active;
         }
 
+        /// <summary>
+        /// Resolves the weapon hit.
+        /// </summary>
         public override WeaponHitResult ResolveWeaponHit(
             in DamageInfo damage)
         {
@@ -79,8 +91,8 @@ namespace ReturnVector.Enemies
                             damage.Source,
                             damage.Phase);
 
-                    bool assistedDamaged = ApplyDamage(in softened);
-                    return assistedDamaged
+                    bool assistedDamage = ApplyDamage(in softened);
+                    return assistedDamage
                         ? WeaponHitResult.DamageAndPierce
                         : new WeaponHitResult(false, false);
                 }
@@ -118,11 +130,17 @@ namespace ReturnVector.Enemies
                 : new WeaponHitResult(false, false);
         }
 
+        /// <summary>
+        /// Applies an incoming damage payload to this target.
+        /// </summary>
         public override void ReceiveDamage(in DamageInfo damage)
         {
             ResolveWeaponHit(in damage);
         }
 
+        /// <summary>
+        /// Checks whether a hit arrives through the Shielded enemy's protected front arc.
+        /// </summary>
         private bool IsIncomingFromFront(
             Vector3 weaponTravelDirection)
         {

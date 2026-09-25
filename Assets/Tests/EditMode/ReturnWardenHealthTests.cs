@@ -5,6 +5,8 @@ using ReturnVector.Enemies;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Edit Mode coverage for ReturnWardenHealth.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -12,6 +14,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class ReturnWardenHealthTests
     {
+        /// <summary>
+        /// Verifies that outbound hit is reduced and pins weapon.
+        /// </summary>
         [Test]
         public void OutboundHit_IsReducedAndPinsWeapon()
         {
@@ -87,6 +92,9 @@ namespace ReturnVector.Tests
                 owner);
         }
 
+        /// <summary>
+        /// Verifies that recall hit is amplified and pierces.
+        /// </summary>
         [Test]
         public void RecallHit_IsAmplifiedAndPierces()
         {
@@ -139,6 +147,9 @@ namespace ReturnVector.Tests
         }
 
 
+        /// <summary>
+        /// Verifies that very easy boss does not enter second phase.
+        /// </summary>
         [Test]
         public void VeryEasy_BossDoesNotEnterSecondPhase()
         {
@@ -176,6 +187,9 @@ namespace ReturnVector.Tests
             GameDifficulty.ReturnToMenu();
         }
 
+        /// <summary>
+        /// Verifies that lethal phase two hit starts phase three at full health.
+        /// </summary>
         [Test]
         public void LethalPhaseTwoHit_StartsPhaseThreeAtFullHealth()
         {

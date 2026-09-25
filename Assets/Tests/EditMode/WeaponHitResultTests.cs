@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using ReturnVector.Combat;
 
+// Script summary: Edit Mode coverage for WeaponHitResult.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -8,6 +10,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class WeaponHitResultTests
     {
+        /// <summary>
+        /// Verifies that damage and pierce damages without blocking.
+        /// </summary>
         [Test]
         public void DamageAndPierce_DamagesWithoutBlocking()
         {
@@ -19,6 +24,9 @@ namespace ReturnVector.Tests
             Assert.IsFalse(result.DeflectsWeapon);
         }
 
+        /// <summary>
+        /// Verifies that deflect stores requested angle.
+        /// </summary>
         [Test]
         public void Deflect_StoresRequestedAngle()
         {

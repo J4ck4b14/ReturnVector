@@ -6,6 +6,8 @@ using ReturnVector.Player;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Return Warden behaviour. Distance and phase select its telegraphed attack vocabulary.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>
@@ -14,6 +16,7 @@ namespace ReturnVector.Enemies
     [DisallowMultipleComponent]
     public sealed class ReturnWardenAI : MonoBehaviour, IEnemyAttackSource
     {
+        // Warden variables
         [SerializeField] private EnemyMotor motor;
         [SerializeField] private ReturnWardenHealth health;
         [SerializeField] private ReturnWardenTuning tuning;
@@ -22,6 +25,7 @@ namespace ReturnVector.Enemies
         [SerializeField] private PlayerMov playerMovement;
         [SerializeField] private WeaponRecallConstraint recallConstraint;
 
+        // Runtime state variables
         private ReturnWardenState state;
         private ReturnWardenAttackKind currentAttack;
         private float stateTimer;
@@ -30,6 +34,7 @@ namespace ReturnVector.Enemies
         private int attackSerial;
         private int transitionTargetPhase;
 
+        // Attack variables
         private Vector3 attackDirection = Vector3.forward;
         private float chargeRemainingDistance;
         private bool chargeHitPlayer;
@@ -70,6 +75,9 @@ namespace ReturnVector.Enemies
         public event Action PhaseThreeTransitionCompleted;
         public event Action ShockwaveReleased;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             EnemyMotor newMotor,
             ReturnWardenHealth newHealth,
@@ -102,16 +110,25 @@ namespace ReturnVector.Enemies
             SubscribeToHealth();
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             SubscribeToHealth();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             UnsubscribeFromHealth();
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (health == null || !health.CanReceiveDamage)
@@ -155,6 +172,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Advances the the pursuit state for the current frame.
+        /// </summary>
         private void TickPursuit(float deltaTime)
         {
             float distance =
@@ -204,6 +224,9 @@ namespace ReturnVector.Enemies
                 tuning.PreferredDistance);
         }
 
+        /// <summary>
+        /// Chooses the next Warden attack from distance, phase and attack history.
+        /// </summary>
         private ReturnWardenAttackKind ChooseAttack(float distance)
         {
             bool advancedPhase =
@@ -236,6 +259,9 @@ namespace ReturnVector.Enemies
             return ReturnWardenAttackKind.None;
         }
 
+        /// <summary>
+        /// Starts the attack.
+        /// </summary>
         private void BeginAttack(ReturnWardenAttackKind attack)
         {
             currentAttack = attack;
@@ -275,6 +301,9 @@ namespace ReturnVector.Enemies
             stateTimer = stateDuration;
         }
 
+        /// <summary>
+        /// Advances the the windup state for the current frame.
+        /// </summary>
         private void TickWindup(float deltaTime)
         {
             motor?.Stop();
@@ -302,6 +331,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Resolves the or enter active attack.
+        /// </summary>
         private void ResolveOrEnterActiveAttack()
         {
             attackSerial++;
@@ -338,6 +370,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Advances the the active state for the current frame.
+        /// </summary>
         private void TickActive(float deltaTime)
         {
             if (currentAttack != ReturnWardenAttackKind.Charge)
@@ -389,6 +424,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Advances the the recovery state for the current frame.
+        /// </summary>
         private void TickRecovery(float deltaTime)
         {
             motor?.Stop();
@@ -402,6 +440,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Advances the the transformation state for the current frame.
+        /// </summary>
         private void TickTransformation(float deltaTime)
         {
             motor?.Stop();
@@ -433,6 +474,9 @@ namespace ReturnVector.Enemies
             transitionTargetPhase = 0;
         }
 
+        /// <summary>
+        /// Starts the recovery.
+        /// </summary>
         private void BeginRecovery(
             float recovery,
             float cooldown)
@@ -480,6 +524,9 @@ namespace ReturnVector.Enemies
             motor?.Stop();
         }
 
+        /// <summary>
+        /// Resolves the slam.
+        /// </summary>
         private void ResolveSlam()
         {
             if (FlatDistance(
@@ -493,6 +540,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Resolves the shockwave.
+        /// </summary>
         private void ResolveShockwave()
         {
             ShockwaveReleased?.Invoke();
@@ -517,6 +567,9 @@ namespace ReturnVector.Enemies
                 tuning.ShockwavePushDistance);
         }
 
+        /// <summary>
+        /// Applies the current phase damage multiplier before damaging the player.
+        /// </summary>
         private void DamagePlayer(
             float amount,
             Vector3 direction)
@@ -548,6 +601,9 @@ namespace ReturnVector.Enemies
             playerHealth.ReceiveDamage(in damage);
         }
 
+        /// <summary>
+        /// Responds when Warden phase two begins.
+        /// </summary>
         private void HandlePhaseTwoStarted()
         {
             BeginTransformation(
@@ -559,6 +615,9 @@ namespace ReturnVector.Enemies
             PhaseTransitionStarted?.Invoke();
         }
 
+        /// <summary>
+        /// Responds when Warden phase three begins.
+        /// </summary>
         private void HandlePhaseThreeStarted()
         {
             BeginTransformation(
@@ -570,6 +629,9 @@ namespace ReturnVector.Enemies
             PhaseThreeTransitionStarted?.Invoke();
         }
 
+        /// <summary>
+        /// Starts the transformation.
+        /// </summary>
         private void BeginTransformation(
             int targetPhase,
             float duration)
@@ -588,6 +650,9 @@ namespace ReturnVector.Enemies
             recallConstraint?.Release();
         }
 
+        /// <summary>
+        /// Subscribes the Warden AI to boss phase events.
+        /// </summary>
         private void SubscribeToHealth()
         {
             if (health == null)
@@ -608,6 +673,9 @@ namespace ReturnVector.Enemies
                 HandlePhaseThreeStarted;
         }
 
+        /// <summary>
+        /// Unsubscribes the Warden AI from boss phase events.
+        /// </summary>
         private void UnsubscribeFromHealth()
         {
             if (health == null)
@@ -649,6 +717,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Returns the flat direction to player.
+        /// </summary>
         private Vector3 FlatDirectionToPlayer()
         {
             Vector3 direction =
@@ -663,6 +734,9 @@ namespace ReturnVector.Enemies
                     : transform.forward;
         }
 
+        /// <summary>
+        /// Returns the flat distance.
+        /// </summary>
         private static float FlatDistance(
             Vector3 a,
             Vector3 b)

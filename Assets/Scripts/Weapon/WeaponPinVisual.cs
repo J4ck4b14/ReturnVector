@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Shows the Warden pin around the resting weapon and its release progress.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace ReturnVector.Weapon
     [DisallowMultipleComponent]
     public sealed class WeaponPinVisual : MonoBehaviour
     {
+        // Weapon variables
         [SerializeField] private WeaponRecallConstraint constraint;
         [SerializeField] private Transform marker;
         [SerializeField, Min(0f)] private float pulseSpeed = 8f;
@@ -15,6 +18,9 @@ namespace ReturnVector.Weapon
 
         private Vector3 baseScale;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             WeaponRecallConstraint newConstraint,
             Transform newMarker)
@@ -33,6 +39,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             if (marker != null)
@@ -42,6 +51,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (marker == null ||

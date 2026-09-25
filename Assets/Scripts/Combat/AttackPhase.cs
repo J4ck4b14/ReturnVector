@@ -1,3 +1,6 @@
+
+// Script summary: Identifies which leg of the weapon cycle produced a hit.
+
 namespace ReturnVector.Combat
 {
     /// <summary>

@@ -4,6 +4,8 @@ using ReturnVector.GameFeel;
 using ReturnVector.Player;
 using UnityEngine;
 
+// Script summary: Keeps its shield toward the player and uses a readable shove when the player stays close.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>
@@ -19,6 +21,7 @@ namespace ReturnVector.Enemies
             Recovery = 2
         }
 
+        // Enemy variables
         [SerializeField] private EnemyMotor motor;
         [SerializeField] private EnemyHealth health;
         [SerializeField] private Transform player;
@@ -31,6 +34,7 @@ namespace ReturnVector.Enemies
         [SerializeField, Min(0f)] private float attackRecovery = 0.62f;
         [SerializeField, Min(0f)] private float attackDamage = 1.1f;
 
+        // Runtime state variables
         private AttackState state;
         private float cooldownRemaining;
         private float stateTimer;
@@ -53,6 +57,9 @@ namespace ReturnVector.Enemies
 
         public Vector3 AttackDirection => attackDirection;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             EnemyMotor newMotor,
             EnemyHealth newHealth,
@@ -71,6 +78,9 @@ namespace ReturnVector.Enemies
             state = AttackState.Pursuit;
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (player == null ||
@@ -100,26 +110,59 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Advances the the pursuit state for the current frame.
+        /// </summary>
         private void TickPursuit(float deltaTime)
         {
             float distance =
                 FlatDistance(transform.position, player.position);
 
-            if (distance > preferredDistance + 0.25f)
+            Vector3 movementTarget = player.position;
+            Vector3 facingTarget = player.position;
+            float stoppingDistance = preferredDistance;
+
+            if (ExtremeTactics.TryGetReturnFrame(
+                    player,
+                    tacticalState,
+                    out ExtremeTactics.ReturnFrame returnFrame))
+            {
+                float corridorDistance =
+                    Mathf.Clamp(
+                        returnFrame.Length * 0.46f,
+                        2.1f,
+                        4.2f);
+
+                float side =
+                    ExtremeTactics.RoleSide(this);
+
+                movementTarget =
+                    returnFrame.PlayerPoint +
+                    returnFrame.Direction * corridorDistance +
+                    returnFrame.Perpendicular * side * 0.52f;
+
+                stoppingDistance = 0.45f;
+                facingTarget = returnFrame.WeaponPoint;
+            }
+
+            float targetDistance =
+                FlatDistance(transform.position, movementTarget);
+
+            if (targetDistance > stoppingDistance + 0.25f)
             {
                 motor?.MoveToward(
-                    player.position,
+                    movementTarget,
                     moveSpeed *
                     GameDifficulty.Current.EnemyMoveSpeedMultiplier,
                     deltaTime,
-                    preferredDistance);
+                    stoppingDistance);
             }
             else
             {
                 motor?.Stop();
             }
 
-            motor?.FaceTarget(player.position, deltaTime);
+            motor?.FaceTarget(facingTarget, deltaTime);
 
             if (distance <= attackRange &&
                 cooldownRemaining <= 0f)
@@ -134,6 +177,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Advances the the windup state for the current frame.
+        /// </summary>
         private void TickWindup(float deltaTime)
         {
             motor?.Stop();
@@ -157,6 +203,9 @@ namespace ReturnVector.Enemies
                 GameDifficulty.Current.EnemyCooldownMultiplier;
         }
 
+        /// <summary>
+        /// Advances the the recovery state for the current frame.
+        /// </summary>
         private void TickRecovery(float deltaTime)
         {
             motor?.Stop();
@@ -170,6 +219,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Resolves the shove.
+        /// </summary>
         private void ResolveShove()
         {
             if (FlatDistance(transform.position, player.position) >
@@ -199,6 +251,9 @@ namespace ReturnVector.Enemies
             target.ReceiveDamage(in damage);
         }
 
+        /// <summary>
+        /// Returns the flat direction to player.
+        /// </summary>
         private Vector3 FlatDirectionToPlayer()
         {
             Vector3 direction = player.position - transform.position;
@@ -209,6 +264,9 @@ namespace ReturnVector.Enemies
                 : transform.forward;
         }
 
+        /// <summary>
+        /// Returns the flat distance.
+        /// </summary>
         private static float FlatDistance(Vector3 a, Vector3 b)
         {
             a.y = 0f;

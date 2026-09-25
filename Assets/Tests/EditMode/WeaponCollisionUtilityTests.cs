@@ -4,10 +4,15 @@ using ReturnVector.Surfaces;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Contains Edit Mode coverage for Weapon Collision Utility.
+
 namespace ReturnVector.Tests.EditMode
 {
     public sealed class WeaponCollisionUtilityTests
     {
+        /// <summary>
+        /// Verifies that stop distance uses minimum contact skin.
+        /// </summary>
         [Test]
         public void StopDistance_UsesMinimumContactSkin()
         {
@@ -22,6 +27,9 @@ namespace ReturnVector.Tests.EditMode
                 0.0001f);
         }
 
+        /// <summary>
+        /// Verifies that stop distance never moves past origin.
+        /// </summary>
         [Test]
         public void StopDistance_NeverMovesPastOrigin()
         {
@@ -36,6 +44,9 @@ namespace ReturnVector.Tests.EditMode
                 0.0001f);
         }
 
+        /// <summary>
+        /// Verifies that reachable position stops before solid geometry.
+        /// </summary>
         [Test]
         public void ReachablePosition_StopsBeforeSolidGeometry()
         {
@@ -70,6 +81,9 @@ namespace ReturnVector.Tests.EditMode
             Object.DestroyImmediate(wall);
         }
 
+        /// <summary>
+        /// Verifies that reachable position allows penetrable surface.
+        /// </summary>
         [Test]
         public void ReachablePosition_AllowsPenetrableSurface()
         {

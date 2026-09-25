@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Centralizes optional diagnostic drawing and overlay settings.
+
 namespace ReturnVector.Debugging
 {
     [CreateAssetMenu(
@@ -10,10 +12,12 @@ namespace ReturnVector.Debugging
     /// </summary>
     public sealed class RVDebugSettings : ScriptableObject
     {
+        // Logging variables
         [Header("Logging")]
         public bool LogStateTransitions = true;
         public bool LogRejectedStateTransitions = true;
 
+        // Scene Diagnostics variables
         [Header("Scene Diagnostics")]
         public bool DrawWeaponOwnerLine = true;
         public bool DrawCollisionNormals = true;
@@ -23,21 +27,25 @@ namespace ReturnVector.Debugging
         public bool DrawCurvatureInfluence = true;
         public bool DrawActualWeaponTrace = true;
 
+        // Trace Recording variables
         [Header("Trace Recording")]
         public bool RecordActualWeaponTrace = true;
         public bool ClearTraceOnNewThrow = true;
         [Min(0.01f)] public float TraceSampleSpacing = 0.12f;
         [Min(16)] public int MaxTraceSamples = 256;
 
+        // Event History variables
         [Header("Event History")]
         [Min(8)] public int EventHistoryCapacity = 96;
         [Range(1, 12)] public int OverlayRecentEventCount = 5;
 
+        // Overlay variables
         [Header("Overlay")]
         public bool ShowRuntimeOverlay = true;
         public bool ShowRecentEventsInOverlay = true;
         public bool ShowSessionCounters = true;
 
+        // Debug Colours variables
         [Header("Debug Colours")]
         public Color OwnerLineColor = Color.cyan;
         public Color CollisionNormalColor = Color.yellow;

@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using ReturnVector.Player;
 
+// Script summary: Edit Mode coverage for PlayerTacticalSnapshot.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -8,6 +10,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class PlayerTacticalSnapshotTests
     {
+        /// <summary>
+        /// Verifies that unarmed locomotion is exposed.
+        /// </summary>
         [Test]
         public void UnarmedLocomotion_IsExposed()
         {
@@ -20,6 +25,9 @@ namespace ReturnVector.Tests
             Assert.IsTrue(snapshot.IsExposed);
         }
 
+        /// <summary>
+        /// Verifies that unarmed dodge is not exposed window.
+        /// </summary>
         [Test]
         public void UnarmedDodge_IsNotExposedWindow()
         {
@@ -32,6 +40,9 @@ namespace ReturnVector.Tests
             Assert.IsFalse(snapshot.IsExposed);
         }
 
+        /// <summary>
+        /// Verifies that armed locomotion is not weapon away.
+        /// </summary>
         [Test]
         public void ArmedLocomotion_IsNotWeaponAway()
         {

@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Pure easing and damping helpers used by presentation systems.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -7,6 +9,9 @@ namespace ReturnVector.GameFeel
     /// </summary>
     public static class RVGameFeelMath
     {
+        /// <summary>
+        /// Returns the exponential blend.
+        /// </summary>
         public static float ExponentialBlend(
             float sharpness,
             float unscaledDeltaTime)
@@ -24,6 +29,9 @@ namespace ReturnVector.GameFeel
                     unscaledDeltaTime);
         }
 
+        /// <summary>
+        /// Returns the impact envelope.
+        /// </summary>
         public static float ImpactEnvelope(
             float remaining,
             float duration)

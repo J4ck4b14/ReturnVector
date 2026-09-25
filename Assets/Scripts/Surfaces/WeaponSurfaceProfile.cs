@@ -1,6 +1,8 @@
 using ReturnVector.Combat;
 using UnityEngine;
 
+// Script summary: Authored response data for outbound and recall interaction with a surface.
+
 namespace ReturnVector.Surfaces
 {
     [CreateAssetMenu(
@@ -11,13 +13,16 @@ namespace ReturnVector.Surfaces
     /// </summary>
     public sealed class WeaponSurfaceProfile : ScriptableObject
     {
+        // Surface variables
         [SerializeField] private WeaponSurfaceKind kind = WeaponSurfaceKind.Neutral;
         [SerializeField] private string designerNote;
 
+        // Availability variables
         [Header("Availability")]
         [SerializeField] private bool affectsOutbound = true;
         [SerializeField] private bool affectsRecall = true;
 
+        // Response variables
         [Header("Response")]
         [SerializeField, Range(0f, 1f)] private float speedRetention = 1f;
         [SerializeField, Min(0f)] private float distanceCost = 0f;
@@ -27,6 +32,9 @@ namespace ReturnVector.Surfaces
         public float SpeedRetention => speedRetention;
         public float DistanceCost => distanceCost;
 
+        /// <summary>
+        /// Checks whether the authored surface response applies to the requested weapon phase.
+        /// </summary>
         public bool AppliesTo(AttackPhase phase)
         {
             return phase == AttackPhase.Outbound
@@ -34,6 +42,9 @@ namespace ReturnVector.Surfaces
                 : phase == AttackPhase.Recall && affectsRecall;
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             WeaponSurfaceKind newKind,
             string note,
@@ -50,6 +61,9 @@ namespace ReturnVector.Surfaces
             affectsRecall = recall;
         }
 
+        /// <summary>
+        /// Restores the authored default tuning values.
+        /// </summary>
         public void ResetDefaults(WeaponSurfaceKind newKind)
         {
             switch (newKind)

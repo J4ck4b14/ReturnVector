@@ -1,3 +1,6 @@
+
+// Script summary: High-level behaviour states and attack vocabulary for the Return Warden.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>

@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Pure reflection and steering helpers for authored surface responses.
+
 namespace ReturnVector.Surfaces
 {
     /// <summary>
@@ -7,6 +9,9 @@ namespace ReturnVector.Surfaces
     /// </summary>
     public static class WeaponSurfaceMath
     {
+        /// <summary>
+        /// Reflects a planar direction using the supplied collision normal.
+        /// </summary>
         public static Vector3 ReflectPlanar(
             Vector3 incomingDirection,
             Vector3 surfaceNormal)
@@ -37,6 +42,9 @@ namespace ReturnVector.Surfaces
                 : -incoming.normalized;
         }
 
+        /// <summary>
+        /// Steers a planar direction toward the requested direction by a bounded angle.
+        /// </summary>
         public static Vector3 SteerPlanar(
             Vector3 currentDirection,
             Vector3 desiredDirection,

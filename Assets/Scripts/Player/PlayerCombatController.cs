@@ -2,6 +2,8 @@ using System;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Tracks whether the player currently owns their primary offensive tool. Later enemy aggression and animation can key off this state.
+
 namespace ReturnVector.Player
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace ReturnVector.Player
     /// </summary>
     public sealed class PlayerCombatController : MonoBehaviour
     {
+        // Weapon variables
         [SerializeField] private WeaponController weapon;
 
         public PlayerCombatMode Mode { get; private set; } = PlayerCombatMode.Armed;
@@ -20,6 +23,9 @@ namespace ReturnVector.Player
 
         public event Action<PlayerCombatMode, PlayerCombatMode> ModeChanged;
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             if (weapon != null)
@@ -29,6 +35,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             if (weapon != null)
@@ -37,6 +46,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(WeaponController newWeapon)
         {
             if (isActiveAndEnabled && weapon != null)
@@ -53,11 +65,17 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Responds when the weapon lifecycle state changes.
+        /// </summary>
         private void HandleWeaponStateChanged(WeaponState previous, WeaponState next)
         {
             RefreshFromWeapon(next);
         }
 
+        /// <summary>
+        /// Refreshes the from weapon.
+        /// </summary>
         private void RefreshFromWeapon(WeaponState state)
         {
             PlayerCombatMode next =

@@ -5,6 +5,8 @@ using ReturnVector.Debugging;
 using ReturnVector.Surfaces;
 using UnityEngine;
 
+// Script summary: Controlled return simulation. The weapon continuously steers toward the live catch point, then authored surface rules may redirect, pass or stop that return.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -13,20 +15,24 @@ namespace ReturnVector.Weapon
     /// </summary>
     public sealed class RecallWeaponMotor : MonoBehaviour
     {
+        // Collision variables
         private const int HitBufferSize = 32;
         private const int CurvatureBufferSize = 16;
         private const int OverlapBufferSize = 24;
 
+        // Weapon variables
         [SerializeField] private WeaponController weapon;
         [SerializeField] private WeaponRecallTuning tuning;
         [SerializeField] private RVDebugSettings debugSettings;
 
+        // Collision variables
         private readonly RaycastHit[] hitBuffer = new RaycastHit[HitBufferSize];
         private readonly Collider[] curvatureBuffer = new Collider[CurvatureBufferSize];
         private readonly Collider[] overlapBuffer = new Collider[OverlapBufferSize];
         private readonly HashSet<int> damagedColliderIds = new HashSet<int>();
         private readonly HashSet<int> passedSurfaceColliderIds = new HashSet<int>();
 
+        // Weapon variables
         private Vector3 direction;
         private float speed;
         private float accumulator;
@@ -70,6 +76,9 @@ namespace ReturnVector.Weapon
         public event Action CatchStarted;
         public event Action CatchCompleted;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             WeaponController newWeapon,
             WeaponRecallTuning newTuning,
@@ -85,6 +94,9 @@ namespace ReturnVector.Weapon
             tuning != null &&
             CatchTarget != null;
 
+        /// <summary>
+        /// Starts the corresponding weapon travel simulation.
+        /// </summary>
         public bool Begin(Vector3 initialDirection)
         {
             if (!CanBegin ||
@@ -124,6 +136,9 @@ namespace ReturnVector.Weapon
         }
 
 
+        /// <summary>
+        /// Redirects weapon travel toward the requested world-space direction.
+        /// </summary>
         public bool DeflectToward(
             Vector3 desiredWorldDirection,
             float maxDegrees)
@@ -163,6 +178,9 @@ namespace ReturnVector.Weapon
             return true;
         }
 
+        /// <summary>
+        /// Stops the current weapon travel simulation immediately.
+        /// </summary>
         public void Abort()
         {
             active = false;
@@ -173,11 +191,17 @@ namespace ReturnVector.Weapon
             passedSurfaceColliderIds.Clear();
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             Tick(Time.deltaTime);
         }
 
+        /// <summary>
+        /// Advances the current fixed-step simulation.
+        /// </summary>
         public void Tick(float deltaTime)
         {
             if (!active ||
@@ -238,6 +262,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Simulates one recall weapon movement step.
+        /// </summary>
         private void SimulateRecallStep(float deltaTime)
         {
             if (WeaponCollisionUtility.HasBlockingOverlap(
@@ -785,6 +812,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Checks whether the weapon has a clear final path to the catch point.
+        /// </summary>
         private bool CanCatchDirectly(Transform target)
         {
             if (target == null ||
@@ -805,6 +835,9 @@ namespace ReturnVector.Weapon
                 weapon.Owner);
         }
 
+        /// <summary>
+        /// Publishes the resolved surface interaction for feedback and diagnostics.
+        /// </summary>
         private void EmitSurfaceInteraction(
             WeaponSurfaceKind kind,
             RaycastHit hit,
@@ -822,6 +855,9 @@ namespace ReturnVector.Weapon
                     hit.collider));
         }
 
+        /// <summary>
+        /// Draws the normal.
+        /// </summary>
         private void DrawNormal(
             RaycastHit hit,
             float length,
@@ -842,6 +878,9 @@ namespace ReturnVector.Weapon
         }
 
         // Catching is a short authored snap from the live weapon position to the moving hand anchor.
+        /// <summary>
+        /// Starts the catch.
+        /// </summary>
         private void BeginCatch()
         {
             if (weapon == null ||
@@ -868,6 +907,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Advances the the catch state for the current frame.
+        /// </summary>
         private void TickCatch(float deltaTime)
         {
             Transform target = CatchTarget;
@@ -902,6 +944,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Completes the catch immediately and updates the owning state.
+        /// </summary>
         private void CompleteCatchImmediately()
         {
             Transform target = CatchTarget;

@@ -3,6 +3,8 @@ using ReturnVector.Combat;
 using ReturnVector.Enemies;
 using UnityEngine;
 
+// Script summary: Drives Warden transformations, shockwaves and the final death beat.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -11,11 +13,13 @@ namespace ReturnVector.GameFeel
     [DisallowMultipleComponent]
     public sealed class ReturnWardenPhaseFeedback : MonoBehaviour
     {
+        // Warden feedback variables
         private const int RingSegments = 56;
         private const int DebrisCount = 12;
         private const int DeathFragmentCount = 8;
         private const int RoarSampleRate = 22050;
 
+        // Runtime reference variables
         [SerializeField] private ReturnWardenHealth health;
         [SerializeField] private ReturnWardenAI ai;
         [SerializeField] private ReturnWardenTuning tuning;
@@ -26,16 +30,25 @@ namespace ReturnVector.GameFeel
         [SerializeField] private RVCameraFeedback cameraFeedback;
         [SerializeField] private EnemyAttackFeedback attackFeedback;
 
+        // Visual variables
         private Vector3 baseVisualScale;
         private Vector3 baseVisualPosition;
+        // Audio variables
         private AudioSource roarSource;
         private AudioClip roarClip;
         private AudioClip shockwaveClip;
+
+        // Material variables
         private Material runtimePhaseMaterial;
+
+        // Runtime state variables
         private bool phaseTwoBeatStarted;
         private bool phaseThreeBeatStarted;
         private bool deathStarted;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             ReturnWardenHealth newHealth,
             ReturnWardenAI newAi,
@@ -79,16 +92,25 @@ namespace ReturnVector.GameFeel
             Subscribe();
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             Subscribe();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             Unsubscribe();
         }
 
+        /// <summary>
+        /// Subscribes to the runtime events used by this component.
+        /// </summary>
         private void Subscribe()
         {
             if (ai != null)
@@ -119,6 +141,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from the runtime events used by this component.
+        /// </summary>
         private void Unsubscribe()
         {
             if (ai != null)
@@ -139,6 +164,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Responds when Warden phase two begins.
+        /// </summary>
         private void HandlePhaseTwoStarted()
         {
             if (phaseTwoBeatStarted)
@@ -151,6 +179,9 @@ namespace ReturnVector.GameFeel
                 PlayPhaseTwoTransformation());
         }
 
+        /// <summary>
+        /// Responds when Warden phase three begins.
+        /// </summary>
         private void HandlePhaseThreeStarted()
         {
             if (phaseThreeBeatStarted)
@@ -163,6 +194,9 @@ namespace ReturnVector.GameFeel
                 PlayPhaseThreeTransformation());
         }
 
+        /// <summary>
+        /// Plays the visual and audio transformation into Warden phase two.
+        /// </summary>
         private IEnumerator PlayPhaseTwoTransformation()
         {
             float duration =
@@ -237,6 +271,9 @@ namespace ReturnVector.GameFeel
             SetAttackFeedbackEnabled(true);
         }
 
+        /// <summary>
+        /// Plays the visual and audio transformation into Warden phase three.
+        /// </summary>
         private IEnumerator PlayPhaseThreeTransformation()
         {
             float duration =
@@ -306,6 +343,9 @@ namespace ReturnVector.GameFeel
             SetAttackFeedbackEnabled(true);
         }
 
+        /// <summary>
+        /// Responds when the Warden releases a shockwave.
+        /// </summary>
         private void HandleShockwaveReleased()
         {
             float range =
@@ -346,6 +386,9 @@ namespace ReturnVector.GameFeel
                     0.06f));
         }
 
+        /// <summary>
+        /// Responds when the Warden reaches its final death state.
+        /// </summary>
         private void HandleDeath(
             DamageInfo damage)
         {
@@ -359,6 +402,9 @@ namespace ReturnVector.GameFeel
                 PlayFinalDeath());
         }
 
+        /// <summary>
+        /// Plays the Warden final roar, breakup and removal sequence.
+        /// </summary>
         private IEnumerator PlayFinalDeath()
         {
             SetAttackFeedbackEnabled(false);
@@ -430,6 +476,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Spawns the death fragments.
+        /// </summary>
         private void SpawnDeathFragments()
         {
             Material fragmentMaterial = effectMaterial;
@@ -507,6 +556,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Animates one Warden death fragment through its short breakup arc.
+        /// </summary>
         private IEnumerator AnimateDeathFragment(
             GameObject fragment,
             Vector3 direction,
@@ -570,6 +622,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Applies the phase two material.
+        /// </summary>
         private void ApplyPhaseTwoMaterial()
         {
             Material material =
@@ -601,6 +656,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Animates the transformation pose.
+        /// </summary>
         private void AnimateTransformationPose(
             float t,
             float scaleAmount,
@@ -644,6 +702,9 @@ namespace ReturnVector.GameFeel
                 (riseAmount * gather);
         }
 
+        /// <summary>
+        /// Restores the Warden visual root to its normal local pose.
+        /// </summary>
         private void RestoreVisualPose()
         {
             if (visualRoot == null)
@@ -658,6 +719,9 @@ namespace ReturnVector.GameFeel
                 baseVisualPosition;
         }
 
+        /// <summary>
+        /// Sets the attack feedback enabled.
+        /// </summary>
         private void SetAttackFeedbackEnabled(
             bool enabled)
         {
@@ -668,6 +732,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Sets the body visible.
+        /// </summary>
         private void SetBodyVisible(
             bool visible)
         {
@@ -688,6 +755,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Plays the roar.
+        /// </summary>
         private void PlayRoar(
             float volume,
             float pitch)
@@ -707,6 +777,9 @@ namespace ReturnVector.GameFeel
             roarSource.Play();
         }
 
+        /// <summary>
+        /// Plays the expanding ring.
+        /// </summary>
         private IEnumerator PlayExpandingRing(
             float startRadius,
             float endRadius,
@@ -799,6 +872,9 @@ namespace ReturnVector.GameFeel
             Destroy(ringObject);
         }
 
+        /// <summary>
+        /// Plays the debris burst.
+        /// </summary>
         private IEnumerator PlayDebrisBurst(
             float duration)
         {
@@ -956,6 +1032,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Ensures the roar source is ready.
+        /// </summary>
         private void EnsureRoarSource()
         {
             if (roarSource == null)
@@ -992,6 +1071,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Builds the roar clip.
+        /// </summary>
         private static AudioClip BuildRoarClip()
         {
             const float duration = 1.65f;
@@ -1095,6 +1177,9 @@ namespace ReturnVector.GameFeel
             return clip;
         }
 
+        /// <summary>
+        /// Builds the shockwave clip.
+        /// </summary>
         private static AudioClip BuildShockwaveClip()
         {
             const float duration = 0.42f;

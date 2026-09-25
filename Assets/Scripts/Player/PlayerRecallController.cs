@@ -3,6 +3,8 @@ using ReturnVector.Input;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Converts recall input into the explicit Returning state and hands motion to RecallWeaponMotor. Recall may begin while the weapon is outbound, parked or embedded.
+
 namespace ReturnVector.Player
 {
     /// <summary>
@@ -11,6 +13,7 @@ namespace ReturnVector.Player
     /// </summary>
     public sealed class PlayerRecallController : MonoBehaviour
     {
+        // Weapon variables
         [SerializeField] private RVInputReader input;
         [SerializeField] private WeaponController weapon;
         [SerializeField] private OutboundWeaponMotor outboundMotor;
@@ -20,6 +23,9 @@ namespace ReturnVector.Player
         public event Action RecallRequested;
         public event Action RecallDenied;
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             if (input != null)
@@ -28,6 +34,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             if (input != null)
@@ -36,6 +45,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             RVInputReader newInput,
             WeaponController newWeapon,
@@ -62,6 +74,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Resets the weapon to hand.
+        /// </summary>
         public void ResetWeaponToHand()
         {
             if (weapon == null)
@@ -82,6 +97,9 @@ namespace ReturnVector.Player
             weapon.ResetToHeld();
         }
 
+        /// <summary>
+        /// Responds when recall input is pressed.
+        /// </summary>
         private void HandleRecallPressed()
         {
             if (weapon == null || recallMotor == null || !recallMotor.CanBegin)
@@ -131,6 +149,9 @@ namespace ReturnVector.Player
             RecallRequested?.Invoke();
         }
 
+        /// <summary>
+        /// Returns the recall direction used when return travel begins.
+        /// </summary>
         private Vector3 GetInitialDirection(WeaponState state)
         {
             if (state == WeaponState.Outbound &&

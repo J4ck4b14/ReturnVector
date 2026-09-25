@@ -3,6 +3,8 @@ using ReturnVector.Enemies;
 using UnityEditor;
 using UnityEngine;
 
+// Script summary: Draws encounter spawn positions and labels in the Scene view.
+
 namespace ReturnVector.Editor
 {
     /// <summary>
@@ -10,6 +12,9 @@ namespace ReturnVector.Editor
     /// </summary>
     public static class EncounterGizmoDrawer
     {
+        /// <summary>
+        /// Draws the encounter.
+        /// </summary>
         [DrawGizmo(GizmoType.Selected)]
         private static void DrawEncounter(
             EncounterController encounter,
@@ -67,6 +72,9 @@ namespace ReturnVector.Editor
                 encounter.Definition.DisplayName);
         }
 
+        /// <summary>
+        /// Returns the gizmo colour associated with the supplied encounter state.
+        /// </summary>
         private static Color ColorFor(
             EnemyArchetype archetype)
         {

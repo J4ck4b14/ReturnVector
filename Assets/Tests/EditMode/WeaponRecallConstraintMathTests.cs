@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using ReturnVector.Weapon;
 
+// Script summary: Edit Mode coverage for WeaponRecallConstraintMath.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -8,6 +10,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class WeaponRecallConstraintMathTests
     {
+        /// <summary>
+        /// Verifies that pin remAIns while player has not moved far enough.
+        /// </summary>
         [Test]
         public void Pin_RemainsWhilePlayerHasNotMovedFarEnough()
         {
@@ -19,6 +24,9 @@ namespace ReturnVector.Tests
                     6f));
         }
 
+        /// <summary>
+        /// Verifies that pin releases at required displacement.
+        /// </summary>
         [Test]
         public void Pin_ReleasesAtRequiredDisplacement()
         {
@@ -30,6 +38,9 @@ namespace ReturnVector.Tests
                     6f));
         }
 
+        /// <summary>
+        /// Verifies that fAIl safe prevents permanent softlock.
+        /// </summary>
         [Test]
         public void FailSafe_PreventsPermanentSoftlock()
         {

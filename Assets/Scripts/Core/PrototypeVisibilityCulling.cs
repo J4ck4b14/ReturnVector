@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 
+// Script summary: Groups encounter-room renderers behind an explicit camera-frustum gate. Physics and gameplay objects remain active while off-screen rendering is suppressed.
+
 namespace ReturnVector.Core
 {
     /// <summary>
@@ -13,6 +15,7 @@ namespace ReturnVector.Core
         [Serializable]
         private sealed class RenderGroup
         {
+            // Run variables
             public Transform Root;
             [NonSerialized] public Renderer[] Renderers = Array.Empty<Renderer>();
             [NonSerialized] public int LastChildCount = -1;
@@ -28,6 +31,9 @@ namespace ReturnVector.Core
         private Plane[] planes = new Plane[6];
         private int frame;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             if (targetCamera == null)
@@ -38,16 +44,25 @@ namespace ReturnVector.Core
             BuildGroups();
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             SetAllVisible();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             SetAllVisible();
         }
 
+        /// <summary>
+        /// Updates presentation after regular frame logic has completed.
+        /// </summary>
         private void LateUpdate()
         {
             if (targetCamera == null || groups.Length == 0)
@@ -92,6 +107,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Builds the groups.
+        /// </summary>
         private void BuildGroups()
         {
             groups = new RenderGroup[roomRoots?.Length ?? 0];
@@ -108,6 +126,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Refreshes the component from its current runtime sources.
+        /// </summary>
         private static void Refresh(RenderGroup group)
         {
             if (group?.Root == null)
@@ -120,6 +141,9 @@ namespace ReturnVector.Core
             group.LastChildCount = group.Root.childCount;
         }
 
+        /// <summary>
+        /// Attempts to calculate renderer bounds for the supplied visibility group.
+        /// </summary>
         private static bool TryGetBounds(Renderer[] renderers, out Bounds bounds)
         {
             bounds = default;
@@ -152,6 +176,9 @@ namespace ReturnVector.Core
             return hasBounds;
         }
 
+        /// <summary>
+        /// Sets the group visible.
+        /// </summary>
         private static void SetGroupVisible(RenderGroup group, bool visible)
         {
             if (group?.Renderers == null)
@@ -169,6 +196,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Sets all visible.
+        /// </summary>
         private void SetAllVisible()
         {
             for (int i = 0; i < groups.Length; i++)

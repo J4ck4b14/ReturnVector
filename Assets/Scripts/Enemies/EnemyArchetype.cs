@@ -1,3 +1,6 @@
+
+// Script summary: Prototype enemy families understood by the encounter factory.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>

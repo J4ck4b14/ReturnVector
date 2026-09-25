@@ -1,6 +1,8 @@
 using ReturnVector.Input;
 using UnityEngine;
 
+// Script summary: Converts pointer or gamepad aim into a flat world-space direction. Mouse aim is projected onto a horizontal plane passing through the supplied origin.
+
 namespace ReturnVector.Player
 {
     /// <summary>
@@ -9,6 +11,7 @@ namespace ReturnVector.Player
     /// </summary>
     public sealed class WorldAimProvider : MonoBehaviour
     {
+        // Player variables
         [SerializeField] private RVInputReader input;
         [SerializeField] private Camera worldCamera;
         [SerializeField] private float directionalAimDistance = 20f;
@@ -17,12 +20,18 @@ namespace ReturnVector.Player
 
         public Vector3 LastValidDirection => lastValidDirection;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(RVInputReader newInput, Camera newCamera)
         {
             input = newInput;
             worldCamera = newCamera;
         }
 
+        /// <summary>
+        /// Attempts to read a valid world-space aim direction and reports whether it succeeded.
+        /// </summary>
         public bool TryGetAim(Vector3 origin, out Vector3 worldPoint, out Vector3 direction)
         {
             worldPoint = origin + lastValidDirection * directionalAimDistance;

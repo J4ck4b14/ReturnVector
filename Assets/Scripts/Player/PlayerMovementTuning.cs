@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Movement, turn and dodge values for armed and weaponless states.
+
 namespace ReturnVector.Player
 {
     [CreateAssetMenu(
@@ -10,6 +12,7 @@ namespace ReturnVector.Player
     /// </summary>
     public sealed class PlayerMovementTuning : ScriptableObject
     {
+        // Locomotion variables
         [Header("Locomotion")]
         [Min(0.01f)] public float ArmedMoveSpeed = 6f;
         [Min(0.01f)] public float UnarmedMoveSpeed = 7f;
@@ -18,6 +21,7 @@ namespace ReturnVector.Player
         [Min(1f)] public float TurnDegreesPerSecond = 1080f;
         [Range(0f, 0.95f)] public float MoveInputDeadzone = 0.08f;
 
+        // Dodge variables
         [Header("Dodge")]
         [Min(0.01f)] public float ArmedDodgeDistance = 3.1f;
         [Min(0.01f)] public float UnarmedDodgeDistance = 3.45f;
@@ -30,6 +34,9 @@ namespace ReturnVector.Player
             new Keyframe(0.30f, 0.70f, 1.1f, 1.1f),
             new Keyframe(1f, 1f, 0.15f, 0f));
 
+        /// <summary>
+        /// Returns movement speed for the current armed or weaponless state.
+        /// </summary>
         public float MoveSpeed(PlayerCombatMode mode)
         {
             return mode == PlayerCombatMode.Unarmed
@@ -37,6 +44,9 @@ namespace ReturnVector.Player
                 : ArmedMoveSpeed;
         }
 
+        /// <summary>
+        /// Returns dodge distance for the current weapon-ownership state.
+        /// </summary>
         public float DodgeDistance(PlayerCombatMode mode)
         {
             return mode == PlayerCombatMode.Unarmed
@@ -44,6 +54,9 @@ namespace ReturnVector.Player
                 : ArmedDodgeDistance;
         }
 
+        /// <summary>
+        /// Returns dodge cooldown for the current weapon-ownership state.
+        /// </summary>
         public float DodgeCooldown(PlayerCombatMode mode)
         {
             return mode == PlayerCombatMode.Unarmed
@@ -51,6 +64,9 @@ namespace ReturnVector.Player
                 : ArmedDodgeCooldown;
         }
 
+        /// <summary>
+        /// Restores the authored default tuning values.
+        /// </summary>
         public void ResetDefaults()
         {
             ArmedMoveSpeed = 6f;

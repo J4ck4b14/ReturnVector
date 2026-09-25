@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Script summary: Tracks progress across the ordered encounter chain.
+
 namespace ReturnVector.Encounters
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace ReturnVector.Encounters
     [DisallowMultipleComponent]
     public sealed class EncounterSequenceDirector : MonoBehaviour
     {
+        // Encounter variables
         [SerializeField] private EncounterController[] encounters =
             Array.Empty<EncounterController>();
 
@@ -57,17 +60,26 @@ namespace ReturnVector.Encounters
         public event Action<int, EncounterController> EncounterCompleted;
         public event Action SequenceCompleted;
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             Subscribe();
             RefreshCompletedCount();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             Unsubscribe();
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             EncounterController[] newEncounters)
         {
@@ -88,6 +100,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Subscribes to the runtime events used by this component.
+        /// </summary>
         private void Subscribe()
         {
             if (encounters == null)
@@ -107,6 +122,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from the runtime events used by this component.
+        /// </summary>
         private void Unsubscribe()
         {
             if (encounters == null)
@@ -126,6 +144,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Responds when an encounter completes.
+        /// </summary>
         private void HandleEncounterCompleted(
             EncounterController encounter)
         {
@@ -146,6 +167,9 @@ namespace ReturnVector.Encounters
             }
         }
 
+        /// <summary>
+        /// Refreshes the completed count.
+        /// </summary>
         private void RefreshCompletedCount()
         {
             completedCount = 0;

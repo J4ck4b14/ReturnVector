@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Script summary: Displays live encounter state while testing the prototype.
+
 namespace ReturnVector.Encounters
 {
     /// <summary>
@@ -8,14 +10,21 @@ namespace ReturnVector.Encounters
     [DisallowMultipleComponent]
     public sealed class EncounterDebugOverlay : MonoBehaviour
     {
+        // Encounter variables
         [SerializeField] private EncounterSequenceDirector sequence;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             EncounterSequenceDirector newSequence)
         {
             sequence = newSequence;
         }
 
+        /// <summary>
+        /// Draws the current runtime interface.
+        /// </summary>
         private void OnGUI()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

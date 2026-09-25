@@ -2,6 +2,8 @@ using System;
 using ReturnVector.Combat;
 using UnityEngine;
 
+// Script summary: Base enemy health and weapon-hit handling shared by standard archetypes.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace ReturnVector.Enemies
     [DisallowMultipleComponent]
     public class EnemyHealth : MonoBehaviour, IDamageable, IWeaponHitReceiver
     {
+        // Enemy variables
         [SerializeField, Min(0.1f)] private float maxHealth = 3f;
         [SerializeField] private bool destroyOnDeath;
 
@@ -25,12 +28,18 @@ namespace ReturnVector.Enemies
         public event Action<float, DamageInfo> Damaged;
         public event Action<DamageInfo> Died;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         protected virtual void Awake()
         {
             currentHealth = maxHealth;
             LifeState = EnemyLifeState.Alive;
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(float health, bool destroy = false)
         {
             maxHealth = Mathf.Max(0.1f, health);
@@ -39,6 +48,9 @@ namespace ReturnVector.Enemies
             destroyOnDeath = destroy;
         }
 
+        /// <summary>
+        /// Resolves the weapon hit.
+        /// </summary>
         public virtual WeaponHitResult ResolveWeaponHit(
             in DamageInfo damage)
         {
@@ -48,11 +60,17 @@ namespace ReturnVector.Enemies
                 : new WeaponHitResult(false, false);
         }
 
+        /// <summary>
+        /// Applies an incoming damage payload to this target.
+        /// </summary>
         public virtual void ReceiveDamage(in DamageInfo damage)
         {
             ApplyDamage(in damage);
         }
 
+        /// <summary>
+        /// Applies the damage.
+        /// </summary>
         protected bool ApplyDamage(in DamageInfo damage)
         {
             if (!CanReceiveDamage ||
@@ -84,6 +102,9 @@ namespace ReturnVector.Enemies
             return true;
         }
 
+        /// <summary>
+        /// Disables active enemy behaviour after death.
+        /// </summary>
         private void DisableEnemyBehaviour()
         {
             Collider[] colliders =

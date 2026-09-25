@@ -3,6 +3,8 @@ using ReturnVector.Core;
 using ReturnVector.Input;
 using UnityEngine;
 
+// Script summary: Top-down locomotion and evasive dodge movement. Weapon ownership selects the movement and dodge tuning used by the same input.
+
 namespace ReturnVector.Player
 {
     /// <summary>
@@ -11,6 +13,7 @@ namespace ReturnVector.Player
     /// </summary>
     public sealed class PlayerMov : MonoBehaviour
     {
+        // Player variables
         [SerializeField] private RVInputReader input;
         [SerializeField] private WorldAimProvider aim;
         [SerializeField] private PlayerCombatController combat;
@@ -53,6 +56,9 @@ namespace ReturnVector.Player
         public event Action<Vector3> DodgeStarted;
         public event Action DodgeCompleted;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             if (characterController == null)
@@ -61,6 +67,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             if (input != null)
@@ -69,6 +78,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             if (input != null)
@@ -77,6 +89,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             RVInputReader newInput,
             WorldAimProvider newAim,
@@ -101,6 +116,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Sets the disabled.
+        /// </summary>
         public void SetDisabled(bool disabled)
         {
             SetState(disabled
@@ -114,6 +132,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Applies the push.
+        /// </summary>
         public void ApplyPush(Vector3 worldDirection, float distance)
         {
             if (state == PlayerMovementState.Disabled || distance <= 0f)
@@ -133,6 +154,9 @@ namespace ReturnVector.Player
             velocity = Vector3.zero;
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (tuning == null || input == null)
@@ -174,6 +198,9 @@ namespace ReturnVector.Player
             TickLocomotion(deltaTime);
         }
 
+        /// <summary>
+        /// Advances the the locomotion state for the current frame.
+        /// </summary>
         private void TickLocomotion(float deltaTime)
         {
             PlayerCombatMode mode = combat != null
@@ -201,6 +228,9 @@ namespace ReturnVector.Player
             UpdateFacing(deltaTime);
         }
 
+        /// <summary>
+        /// Updates the facing.
+        /// </summary>
         private void UpdateFacing(float deltaTime)
         {
             Vector3 desired = facingDirection;
@@ -232,6 +262,9 @@ namespace ReturnVector.Player
                 tuning.TurnDegreesPerSecond * deltaTime);
         }
 
+        /// <summary>
+        /// Responds when dodge input is pressed.
+        /// </summary>
         private void HandleDodgePressed()
         {
             if (state == PlayerMovementState.Disabled || tuning == null)
@@ -244,6 +277,9 @@ namespace ReturnVector.Player
                 Mathf.Max(tuning.DodgeInputBuffer, 0.0001f));
         }
 
+        /// <summary>
+        /// Starts the dodge.
+        /// </summary>
         private void BeginDodge()
         {
             if (state != PlayerMovementState.Locomotion ||
@@ -284,6 +320,9 @@ namespace ReturnVector.Player
             DodgeStarted?.Invoke(dodgeDirection);
         }
 
+        /// <summary>
+        /// Advances the the dodge state for the current frame.
+        /// </summary>
         private void TickDodge(float deltaTime)
         {
             float duration = Mathf.Max(0.01f, tuning.DodgeDuration);
@@ -311,6 +350,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Applies planar player movement through the CharacterController.
+        /// </summary>
         private void Move(Vector3 displacement)
         {
             displacement.y = 0f;
@@ -326,6 +368,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Sets the state.
+        /// </summary>
         private void SetState(PlayerMovementState next)
         {
             if (state == next)

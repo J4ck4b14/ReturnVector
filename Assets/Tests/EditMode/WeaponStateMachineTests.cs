@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using ReturnVector.Weapon;
 
+// Script summary: Edit Mode coverage for WeaponStateMachine.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -8,6 +10,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class WeaponStateMachineTests
     {
+        /// <summary>
+        /// Verifies that starts held.
+        /// </summary>
         [Test]
         public void StartsHeld()
         {
@@ -15,6 +20,9 @@ namespace ReturnVector.Tests
             Assert.AreEqual(WeaponState.Held, machine.Current);
         }
 
+        /// <summary>
+        /// Verifies that core loop through parked is legal.
+        /// </summary>
         [Test]
         public void CoreLoop_ThroughParked_IsLegal()
         {
@@ -28,6 +36,9 @@ namespace ReturnVector.Tests
             Assert.IsTrue(machine.TryTransition(WeaponState.Held));
         }
 
+        /// <summary>
+        /// Verifies that core loop through embedded is legal.
+        /// </summary>
         [Test]
         public void CoreLoop_ThroughEmbedded_IsLegal()
         {
@@ -41,6 +52,9 @@ namespace ReturnVector.Tests
             Assert.IsTrue(machine.TryTransition(WeaponState.Held));
         }
 
+        /// <summary>
+        /// Verifies that held cannot skip directly to returning.
+        /// </summary>
         [Test]
         public void Held_CannotSkipDirectlyToReturning()
         {
@@ -50,6 +64,9 @@ namespace ReturnVector.Tests
             Assert.AreEqual(WeaponState.Held, machine.Current);
         }
 
+        /// <summary>
+        /// Verifies that returning can be blocked into embedded.
+        /// </summary>
         [Test]
         public void Returning_CanBeBlockedIntoEmbedded()
         {
@@ -62,6 +79,9 @@ namespace ReturnVector.Tests
             Assert.IsTrue(machine.TryTransition(WeaponState.Embedded));
         }
 
+        /// <summary>
+        /// Verifies that parked can recall and catch.
+        /// </summary>
         [Test]
         public void Parked_CanRecallAndCatch()
         {

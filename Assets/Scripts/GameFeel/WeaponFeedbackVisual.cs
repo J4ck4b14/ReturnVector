@@ -1,6 +1,8 @@
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Applies presentation-only compression, flash and catch tension to the weapon visual.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -9,16 +11,21 @@ namespace ReturnVector.GameFeel
     [DisallowMultipleComponent]
     public sealed class WeaponFeedbackVisual : MonoBehaviour
     {
+        // Feedback variables
         [SerializeField] private Transform visualRoot;
         [SerializeField] private RVRendererFlash flash;
         [SerializeField] private OutboundWeaponMotor outboundMotor;
         [SerializeField] private RecallWeaponMotor recallMotor;
         [SerializeField] private RVGameFeelProfile profile;
 
+        // Weapon variables
         private Vector3 baseScale;
         private float impactKick;
         private float catchTension;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             if (visualRoot != null)
@@ -28,11 +35,17 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             Bind();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             Unbind();
@@ -44,6 +57,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             Transform newVisualRoot,
             RVRendererFlash newFlash,
@@ -71,6 +87,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Subscribes this presentation component to its gameplay events.
+        /// </summary>
         private void Bind()
         {
             if (outboundMotor != null)
@@ -92,6 +111,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Unsubscribes this presentation component from its gameplay events.
+        /// </summary>
         private void Unbind()
         {
             if (outboundMotor != null)
@@ -113,6 +135,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (visualRoot == null ||
@@ -159,6 +184,9 @@ namespace ReturnVector.GameFeel
                     blend);
         }
 
+        /// <summary>
+        /// Responds to an outbound weapon impact.
+        /// </summary>
         private void HandleOutboundImpact(
             WeaponImpactInfo impact)
         {
@@ -175,6 +203,9 @@ namespace ReturnVector.GameFeel
                     1f));
         }
 
+        /// <summary>
+        /// Responds to a recall weapon impact.
+        /// </summary>
         private void HandleRecallImpact(
             WeaponImpactInfo impact)
         {
@@ -191,11 +222,17 @@ namespace ReturnVector.GameFeel
                     1f));
         }
 
+        /// <summary>
+        /// Responds when the baton enters its final catch movement.
+        /// </summary>
         private void HandleCatchStarted()
         {
             catchTension = 1f;
         }
 
+        /// <summary>
+        /// Responds when the baton catch completes.
+        /// </summary>
         private void HandleCatchCompleted()
         {
             catchTension = 0.7f;

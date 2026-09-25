@@ -1,3 +1,6 @@
+
+// Script summary: Surface behaviours understood by weapon travel.
+
 namespace ReturnVector.Surfaces
 {
     /// <summary>

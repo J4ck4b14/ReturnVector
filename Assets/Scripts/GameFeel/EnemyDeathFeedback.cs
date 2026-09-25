@@ -3,6 +3,8 @@ using ReturnVector.Combat;
 using ReturnVector.Enemies;
 using UnityEngine;
 
+// Script summary: Plays the enemy fall and leaves a flat material-matched splatter on the floor.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -11,21 +13,27 @@ namespace ReturnVector.GameFeel
     [DisallowMultipleComponent]
     public sealed class EnemyDeathFeedback : MonoBehaviour
     {
+        // Feedback variables
         private const float FallSeconds = 0.34f;
         private const float FallAngle = 82f;
         private const float GroundProbeHeight = 2f;
         private const float GroundProbeDistance = 5f;
         private const int GroundHitBufferSize = 12;
 
+        // Visual variables
         [SerializeField] private EnemyHealth health;
         [SerializeField] private Renderer[] renderers;
         [SerializeField] private Material splatterMaterial;
 
+        // Feedback variables
         private readonly RaycastHit[] groundHits =
             new RaycastHit[GroundHitBufferSize];
 
         private bool dying;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             EnemyHealth newHealth,
             Renderer[] newRenderers,
@@ -40,21 +48,33 @@ namespace ReturnVector.GameFeel
             Subscribe();
         }
 
+        /// <summary>
+        /// Sets the splatter material.
+        /// </summary>
         public void SetSplatterMaterial(Material material)
         {
             splatterMaterial = material;
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             Subscribe();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             Unsubscribe();
         }
 
+        /// <summary>
+        /// Subscribes to the runtime events used by this component.
+        /// </summary>
         private void Subscribe()
         {
             if (health != null)
@@ -64,6 +84,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from the runtime events used by this component.
+        /// </summary>
         private void Unsubscribe()
         {
             if (health != null)
@@ -72,6 +95,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Responds when the tracked enemy dies.
+        /// </summary>
         private void HandleDeath(DamageInfo damage)
         {
             if (dying)
@@ -84,6 +110,9 @@ namespace ReturnVector.GameFeel
             StartCoroutine(PlayFall(damage.Direction));
         }
 
+        /// <summary>
+        /// Plays the fall.
+        /// </summary>
         private IEnumerator PlayFall(Vector3 hitDirection)
         {
             Vector3 fallDirection = hitDirection;
@@ -158,6 +187,9 @@ namespace ReturnVector.GameFeel
             Destroy(gameObject);
         }
 
+        /// <summary>
+        /// Creates the splatter.
+        /// </summary>
         private void CreateSplatter()
         {
             Vector3 groundPoint = transform.position;
@@ -205,6 +237,9 @@ namespace ReturnVector.GameFeel
                 new Vector3(0.16f, 0.005f, 0.21f) * scale);
         }
 
+        /// <summary>
+        /// Attempts to find the floor point used for the enemy death splatter.
+        /// </summary>
         private void TryFindGround(
             ref Vector3 point,
             ref Vector3 normal)
@@ -252,6 +287,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Creates the splatter piece.
+        /// </summary>
         private void CreateSplatterPiece(
             Transform parent,
             string pieceName,
@@ -292,6 +330,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Sets the renderers visible.
+        /// </summary>
         private void SetRenderersVisible(bool visible)
         {
             if (renderers == null)

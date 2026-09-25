@@ -1,6 +1,8 @@
 using ReturnVector.Combat;
 using UnityEngine;
 
+// Script summary: Snapshot of one resolved surface interaction for feedback and diagnostics.
+
 namespace ReturnVector.Surfaces
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace ReturnVector.Surfaces
     /// </summary>
     public readonly struct WeaponSurfaceInteractionInfo
     {
+        // Surface variables
         public readonly WeaponSurfaceKind Kind;
         public readonly AttackPhase Phase;
         public readonly Vector3 Point;
@@ -16,6 +19,9 @@ namespace ReturnVector.Surfaces
         public readonly Vector3 OutgoingDirection;
         public readonly Collider Collider;
 
+        /// <summary>
+        /// Creates a new WeaponSurfaceInteractionInfo with the supplied values.
+        /// </summary>
         public WeaponSurfaceInteractionInfo(
             WeaponSurfaceKind kind,
             AttackPhase phase,

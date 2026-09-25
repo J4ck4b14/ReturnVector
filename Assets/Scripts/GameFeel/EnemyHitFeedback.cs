@@ -2,6 +2,8 @@ using ReturnVector.Combat;
 using ReturnVector.Enemies;
 using UnityEngine;
 
+// Script summary: Applies phase-sensitive hit feedback to an enemy renderer.
+
 namespace ReturnVector.GameFeel
 {
     /// <summary>
@@ -10,10 +12,14 @@ namespace ReturnVector.GameFeel
     [DisallowMultipleComponent]
     public sealed class EnemyHitFeedback : MonoBehaviour
     {
+        // Feedback variables
         [SerializeField] private EnemyHealth health;
         [SerializeField] private RVRendererFlash flash;
         [SerializeField] private RVGameFeelProfile profile;
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             if (health != null)
@@ -23,6 +29,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             if (health != null)
@@ -32,6 +41,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             EnemyHealth newHealth,
             RVRendererFlash newFlash,
@@ -56,6 +68,9 @@ namespace ReturnVector.GameFeel
             }
         }
 
+        /// <summary>
+        /// Responds when the tracked target takes damage.
+        /// </summary>
         private void HandleDamaged(
             float currentHealth,
             DamageInfo damage)

@@ -3,6 +3,8 @@ using ReturnVector.Combat;
 using ReturnVector.Surfaces;
 using UnityEngine;
 
+// Script summary: Edit Mode coverage for WeaponSurfaceMath.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -10,6 +12,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class WeaponSurfaceMathTests
     {
+        /// <summary>
+        /// Verifies that reflection uses planar collision normal.
+        /// </summary>
         [Test]
         public void Reflection_UsesPlanarCollisionNormal()
         {
@@ -22,6 +27,9 @@ namespace ReturnVector.Tests
             Assert.That(result.y, Is.EqualTo(0f).Within(0.0001f));
         }
 
+        /// <summary>
+        /// Verifies that steer planar does not overshoot desired direction.
+        /// </summary>
         [Test]
         public void SteerPlanar_DoesNotOvershootDesiredDirection()
         {
@@ -35,6 +43,9 @@ namespace ReturnVector.Tests
             Assert.That(angle, Is.EqualTo(45f).Within(0.05f));
         }
 
+        /// <summary>
+        /// Verifies that penetrable profile resolves as non blocking.
+        /// </summary>
         [Test]
         public void PenetrableProfile_ResolvesAsNonBlocking()
         {
@@ -68,6 +79,9 @@ namespace ReturnVector.Tests
             Object.DestroyImmediate(go);
         }
 
+        /// <summary>
+        /// Verifies that absorbing profile resolves as blocking.
+        /// </summary>
         [Test]
         public void AbsorbingProfile_ResolvesAsBlocking()
         {

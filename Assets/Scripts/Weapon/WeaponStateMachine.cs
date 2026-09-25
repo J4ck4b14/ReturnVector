@@ -1,6 +1,8 @@
 using System;
 using ReturnVector.Core;
 
+// Script summary: Owns the legal transitions across the weapon lifecycle.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace ReturnVector.Weapon
     /// </summary>
     public sealed class WeaponStateMachine
     {
+        // Runtime state variables
         private readonly StateMachine<WeaponState> stateMachine =
             new StateMachine<WeaponState>(WeaponState.Held);
 
@@ -19,6 +22,9 @@ namespace ReturnVector.Weapon
             remove => stateMachine.Transitioned -= value;
         }
 
+        /// <summary>
+        /// Attempts the requested state transition and reports whether it succeeded.
+        /// </summary>
         public bool TryTransition(WeaponState next)
         {
             if (!IsLegal(Current, next))
@@ -29,11 +35,17 @@ namespace ReturnVector.Weapon
             return stateMachine.TryTransition(next);
         }
 
+        /// <summary>
+        /// Resets the to held.
+        /// </summary>
         public void ResetToHeld()
         {
             stateMachine.Force(WeaponState.Held);
         }
 
+        /// <summary>
+        /// Checks whether the requested weapon state transition is legal.
+        /// </summary>
         public static bool IsLegal(WeaponState from, WeaponState to)
         {
             switch (from)

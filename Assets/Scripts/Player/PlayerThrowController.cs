@@ -3,6 +3,8 @@ using ReturnVector.Input;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Owns the player's outbound throw command and anticipation window. Aim remains live during anticipation; the direction is committed on release.
+
 namespace ReturnVector.Player
 {
     /// <summary>
@@ -11,12 +13,14 @@ namespace ReturnVector.Player
     /// </summary>
     public sealed class PlayerThrowController : MonoBehaviour
     {
+        // Weapon variables
         [SerializeField] private RVInputReader input;
         [SerializeField] private WorldAimProvider aim;
         [SerializeField] private WeaponController weapon;
         [SerializeField] private OutboundWeaponMotor outboundMotor;
         [SerializeField] private WeaponThrowTuning tuning;
 
+        // Player variables
         private float anticipationRemaining;
 
         public bool IsAnticipating =>
@@ -28,6 +32,9 @@ namespace ReturnVector.Player
         public event Action ThrowAnticipationStarted;
         public event Action<Vector3> ThrowReleased;
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             weapon?.ConfigureHeldCollision(tuning);
@@ -38,6 +45,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             if (input != null)
@@ -46,6 +56,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             RVInputReader newInput,
             WorldAimProvider newAim,
@@ -71,6 +84,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (!IsAnticipating || tuning == null)
@@ -85,6 +101,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Responds when throw input is pressed.
+        /// </summary>
         private void HandleThrowPressed()
         {
             if (weapon == null ||
@@ -108,6 +127,9 @@ namespace ReturnVector.Player
             }
         }
 
+        /// <summary>
+        /// Commits the throw direction when anticipation ends.
+        /// </summary>
         private void ReleaseThrow()
         {
             if (weapon == null ||

@@ -2,6 +2,8 @@ using System;
 using ReturnVector.Combat;
 using UnityEngine;
 
+// Script summary: Tracks persistent player health and publishes damage/death events.
+
 namespace ReturnVector.Player
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace ReturnVector.Player
     [DisallowMultipleComponent]
     public sealed class PlayerHealth : MonoBehaviour, IDamageable
     {
+        // Player variables
         [SerializeField, Min(1f)] private float maxHealth = 10f;
         [SerializeField] private bool resetOnDeath = true;
 
@@ -22,11 +25,17 @@ namespace ReturnVector.Player
         public event Action<float, DamageInfo> Damaged;
         public event Action Died;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             currentHealth = maxHealth;
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             float health,
             bool shouldResetOnDeath = true)
@@ -37,11 +46,17 @@ namespace ReturnVector.Player
         }
 
 
+        /// <summary>
+        /// Resets the to full.
+        /// </summary>
         public void ResetToFull()
         {
             currentHealth = maxHealth;
         }
 
+        /// <summary>
+        /// Restores player health up to the configured maximum.
+        /// </summary>
         public void Restore(float amount)
         {
             if (amount <= 0f ||
@@ -56,6 +71,9 @@ namespace ReturnVector.Player
                     currentHealth + amount);
         }
 
+        /// <summary>
+        /// Applies an incoming damage payload to this target.
+        /// </summary>
         public void ReceiveDamage(in DamageInfo damage)
         {
             if (!CanReceiveDamage ||

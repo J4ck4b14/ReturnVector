@@ -2,6 +2,8 @@ using ReturnVector.Combat;
 using ReturnVector.Player;
 using UnityEngine;
 
+// Script summary: Fixed-line ranged projectile with swept collision against the player and environment.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>
@@ -9,10 +11,12 @@ namespace ReturnVector.Enemies
     /// </summary>
     public sealed class EnemyProjectile : MonoBehaviour
     {
+        // Collision variables
         private const int HitBufferSize = 16;
 
         private readonly RaycastHit[] hitBuffer = new RaycastHit[HitBufferSize];
 
+        // Enemy variables
         private PlayerHealth playerHealth;
         private Vector3 direction;
         private float speed;
@@ -21,6 +25,9 @@ namespace ReturnVector.Enemies
         private float damage;
         private GameObject instigator;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             PlayerHealth newPlayerHealth,
             Vector3 worldDirection,
@@ -50,6 +57,9 @@ namespace ReturnVector.Enemies
                 Quaternion.LookRotation(direction, Vector3.up);
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             float dt = Time.deltaTime;
@@ -120,6 +130,9 @@ namespace ReturnVector.Enemies
             transform.position = start + direction * travel;
         }
 
+        /// <summary>
+        /// Checks whether a collider belongs to the projectile's firing enemy.
+        /// </summary>
         private bool IsInstigatorCollider(Collider collider)
         {
             if (instigator == null || collider == null)
@@ -133,6 +146,9 @@ namespace ReturnVector.Enemies
             return candidate == owner || candidate.IsChildOf(owner);
         }
 
+        /// <summary>
+        /// Sorts the hits.
+        /// </summary>
         private void SortHits(int count)
         {
             int safeCount = Mathf.Min(count, hitBuffer.Length);

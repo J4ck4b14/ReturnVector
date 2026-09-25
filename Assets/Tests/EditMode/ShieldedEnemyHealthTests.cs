@@ -4,6 +4,8 @@ using ReturnVector.Core;
 using ReturnVector.Enemies;
 using UnityEngine;
 
+// Script summary: Edit Mode coverage for ShieldedEnemyHealth.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -11,12 +13,18 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class ShieldedEnemyHealthTests
     {
+        /// <summary>
+        /// Creates the shared objects required by the test.
+        /// </summary>
         [SetUp]
         public void SetUp()
         {
             GameDifficulty.BeginRun(RunDifficulty.Normal);
         }
 
+        /// <summary>
+        /// Cleans up objects created by the test.
+        /// </summary>
         [TearDown]
         public void TearDown()
         {
@@ -24,6 +32,9 @@ namespace ReturnVector.Tests
             GameDifficulty.ReturnToMenu();
         }
 
+        /// <summary>
+        /// Verifies that frontal outbound hit is deflected without damage.
+        /// </summary>
         [Test]
         public void FrontalOutboundHit_IsDeflectedWithoutDamage()
         {
@@ -52,6 +63,9 @@ namespace ReturnVector.Tests
             Object.DestroyImmediate(enemy);
         }
 
+        /// <summary>
+        /// Verifies that rear recall hit receives recall multiplier.
+        /// </summary>
         [Test]
         public void RearRecallHit_ReceivesRecallMultiplier()
         {
@@ -79,6 +93,9 @@ namespace ReturnVector.Tests
         }
 
 
+        /// <summary>
+        /// Verifies that disabled shield allows frontal one hit damage.
+        /// </summary>
         [Test]
         public void DisabledShield_AllowsFrontalOneHitDamage()
         {
@@ -108,6 +125,9 @@ namespace ReturnVector.Tests
         }
 
 
+        /// <summary>
+        /// Verifies that very easy frontal recall deals reduced damage.
+        /// </summary>
         [Test]
         public void VeryEasy_FrontalRecallDealsReducedDamage()
         {
@@ -136,6 +156,9 @@ namespace ReturnVector.Tests
             Object.DestroyImmediate(enemy);
         }
 
+        /// <summary>
+        /// Verifies that frontal recall does not receive damage.
+        /// </summary>
         [Test]
         public void FrontalRecall_DoesNotReceiveDamage()
         {

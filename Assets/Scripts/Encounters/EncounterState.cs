@@ -1,3 +1,6 @@
+
+// Script summary: Lifecycle states for an encounter.
+
 namespace ReturnVector.Encounters
 {
     /// <summary>

@@ -4,6 +4,8 @@ using ReturnVector.Combat;
 using ReturnVector.Surfaces;
 using UnityEngine;
 
+// Script summary: Shared collision filtering and component lookup for both weapon travel phases.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -11,6 +13,9 @@ namespace ReturnVector.Weapon
     /// </summary>
     public static class WeaponCollisionUtility
     {
+        /// <summary>
+        /// Checks whether a collider belongs to the weapon owner hierarchy.
+        /// </summary>
         public static bool IsOwnedCollider(
             Collider collider,
             Transform weaponRoot,
@@ -40,6 +45,9 @@ namespace ReturnVector.Weapon
 
 
 
+        /// <summary>
+        /// Returns the stop distance.
+        /// </summary>
         public static float StopDistance(
             float hitDistance,
             float configuredBackoff)
@@ -48,6 +56,9 @@ namespace ReturnVector.Weapon
             return Mathf.Max(0f, hitDistance - skin);
         }
 
+        /// <summary>
+        /// Checks whether solid geometry blocks the path between two weapon positions.
+        /// </summary>
         public static bool HasBlockingPath(
             Vector3 origin,
             Vector3 target,
@@ -127,6 +138,10 @@ namespace ReturnVector.Weapon
         }
 
 
+        /// <summary>
+        /// Finds the closest world position reachable from the player side without crossing solid
+        /// geometry.
+        /// </summary>
         public static bool TryResolveReachableWorldPosition(
             Vector3 referencePosition,
             Vector3 desiredPosition,
@@ -271,6 +286,9 @@ namespace ReturnVector.Weapon
             return true;
         }
 
+        /// <summary>
+        /// Finds the farthest clear point.
+        /// </summary>
         private static Vector3 FindFarthestClearPoint(
             Vector3 clearReference,
             Vector3 blockedTarget,
@@ -318,6 +336,10 @@ namespace ReturnVector.Weapon
                 clearT);
         }
 
+        /// <summary>
+        /// Checks whether the collider is an authored surface that permits this weapon phase to
+        /// pass.
+        /// </summary>
         private static bool IsPassThroughSurface(
             Collider collider,
             AttackPhase phase)
@@ -331,6 +353,9 @@ namespace ReturnVector.Weapon
                  profile.Kind == WeaponSurfaceKind.Curving);
         }
 
+        /// <summary>
+        /// Checks whether the baton currently overlaps solid blocking geometry.
+        /// </summary>
         public static bool HasBlockingOverlap(
             Vector3 position,
             float radius,
@@ -387,6 +412,9 @@ namespace ReturnVector.Weapon
             return false;
         }
 
+        /// <summary>
+        /// Attempts to find a weapon-hit receiver on the supplied collider hierarchy.
+        /// </summary>
         public static bool TryGetWeaponHitReceiver(
             Collider collider,
             out IWeaponHitReceiver receiver)
@@ -414,6 +442,9 @@ namespace ReturnVector.Weapon
             return false;
         }
 
+        /// <summary>
+        /// Attempts to find a damageable target on the supplied collider hierarchy.
+        /// </summary>
         public static bool TryGetDamageable(
             Collider collider,
             out IDamageable damageable)
@@ -442,6 +473,9 @@ namespace ReturnVector.Weapon
             return false;
         }
 
+        /// <summary>
+        /// Sorts the hits by distance.
+        /// </summary>
         public static void SortHitsByDistance(
             RaycastHit[] hits,
             int hitCount)
@@ -457,9 +491,13 @@ namespace ReturnVector.Weapon
         private sealed class RaycastHitDistanceComparer :
             IComparer<RaycastHit>
         {
+            // Weapon variables
             public static readonly RaycastHitDistanceComparer Instance =
                 new RaycastHitDistanceComparer();
 
+            /// <summary>
+            /// Orders raycast hits by distance for deterministic collision processing.
+            /// </summary>
             public int Compare(RaycastHit a, RaycastHit b)
             {
                 int distanceOrder = a.distance.CompareTo(b.distance);

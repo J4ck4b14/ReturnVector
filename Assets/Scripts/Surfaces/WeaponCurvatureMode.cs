@@ -1,3 +1,6 @@
+
+// Script summary: Available direction models for a curvature field.
+
 namespace ReturnVector.Surfaces
 {
     /// <summary>

@@ -8,6 +8,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
+// Script summary: Owns the menu, run HUD, fail state, victory summary and scene-level flow.
+
 namespace ReturnVector.Core
 {
     /// <summary>
@@ -25,6 +27,7 @@ namespace ReturnVector.Core
             Complete = 4
         }
 
+        // Gameplay reference variables
         [SerializeField] private RVInputReader input;
         [SerializeField] private PlayerHealth playerHealth;
         [SerializeField] private PlayerMov movement;
@@ -34,7 +37,10 @@ namespace ReturnVector.Core
         [SerializeField] private RVHitStopController hitStop;
         [SerializeField, Min(0f)] private float victoryPauseDelay = 1.05f;
 
+        // Run state variables
         private FlowState state;
+
+        // GUI variables
         private GUIStyle titleStyle;
         private GUIStyle subtitleStyle;
         private GUIStyle healthStyle;
@@ -44,6 +50,7 @@ namespace ReturnVector.Core
         private GUIStyle menuTitleStyle;
         private GUIStyle menuHintStyle;
 
+        // Run variables
         private float runSeconds;
         private float finalRunSeconds;
         private float finalHealth;
@@ -55,6 +62,9 @@ namespace ReturnVector.Core
         private float finalScoreMultiplier;
         private string finalDifficultyLabel;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             if (GameDifficulty.ShowMenuOnLoad)
@@ -69,6 +79,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             if (input != null)
@@ -88,6 +101,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             if (input != null)
@@ -107,6 +123,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (state == FlowState.Playing)
@@ -123,6 +142,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Starts a run using the currently selected difficulty.
+        /// </summary>
         private void BeginRun()
         {
             state = FlowState.Playing;
@@ -139,12 +161,18 @@ namespace ReturnVector.Core
             SetGameplayEnabled(true);
         }
 
+        /// <summary>
+        /// Selects a difficulty and starts the run.
+        /// </summary>
         private void SelectDifficulty(RunDifficulty difficulty)
         {
             GameDifficulty.BeginRun(difficulty);
             BeginRun();
         }
 
+        /// <summary>
+        /// Responds when the player dies.
+        /// </summary>
         private void HandlePlayerDeath()
         {
             if (state != FlowState.Playing)
@@ -163,6 +191,9 @@ namespace ReturnVector.Core
             Time.timeScale = 0f;
         }
 
+        /// <summary>
+        /// Responds when an encounter completes.
+        /// </summary>
         private void HandleEncounterCompleted(
             int index,
             EncounterController encounter)
@@ -187,6 +218,9 @@ namespace ReturnVector.Core
                 playerHealth.MaxHealth * restoreFraction);
         }
 
+        /// <summary>
+        /// Responds when the full encounter sequence completes.
+        /// </summary>
         private void HandleSequenceComplete()
         {
             if (state != FlowState.Playing)
@@ -200,6 +234,9 @@ namespace ReturnVector.Core
             StartCoroutine(PauseAfterVictoryFeedback());
         }
 
+        /// <summary>
+        /// Captures the final run statistics used by the victory screen.
+        /// </summary>
         private void CaptureVictoryStats()
         {
             finalRunSeconds = runSeconds;
@@ -242,6 +279,9 @@ namespace ReturnVector.Core
                     : 0;
         }
 
+        /// <summary>
+        /// Waits for the final feedback beat before pausing on the results screen.
+        /// </summary>
         private IEnumerator PauseAfterVictoryFeedback()
         {
             yield return new WaitForSecondsRealtime(victoryPauseDelay);
@@ -259,6 +299,9 @@ namespace ReturnVector.Core
             Time.timeScale = 0f;
         }
 
+        /// <summary>
+        /// Sets the gameplay enabled.
+        /// </summary>
         private void SetGameplayEnabled(bool enabled)
         {
             if (movement != null)
@@ -277,6 +320,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Responds to restart input after the run has ended.
+        /// </summary>
         private void HandleRestartPressed()
         {
             if (state != FlowState.Lost &&
@@ -289,6 +335,9 @@ namespace ReturnVector.Core
             ReloadScene();
         }
 
+        /// <summary>
+        /// Marks the next scene load to open on the main menu.
+        /// </summary>
         private void ReturnToMenu()
         {
             if (state != FlowState.Lost &&
@@ -301,6 +350,9 @@ namespace ReturnVector.Core
             ReloadScene();
         }
 
+        /// <summary>
+        /// Reloads the current gameplay scene.
+        /// </summary>
         private static void ReloadScene()
         {
             Time.timeScale = 1f;
@@ -316,6 +368,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Draws the current runtime interface.
+        /// </summary>
         private void OnGUI()
         {
             EnsureStyles();
@@ -350,6 +405,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Draws the mAIn menu.
+        /// </summary>
         private void DrawMainMenu()
         {
             float width = Mathf.Min(360f, Screen.width - 48f);
@@ -376,6 +434,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Draws the difficulty menu.
+        /// </summary>
         private void DrawDifficultyMenu()
         {
             float panelWidth = Mathf.Min(820f, Screen.width - 48f);
@@ -423,10 +484,18 @@ namespace ReturnVector.Core
                 buttonWidth,
                 hintWidth);
 
+            DrawDifficultyChoice(
+                RunDifficulty.Extreme,
+                buttonX,
+                hintX,
+                y + 304f,
+                buttonWidth,
+                hintWidth);
+
             if (GUI.Button(
                     new Rect(
                         buttonX,
-                        y + 316f,
+                        y + 392f,
                         buttonWidth,
                         46f),
                     "BACK"))
@@ -435,6 +504,9 @@ namespace ReturnVector.Core
             }
         }
 
+        /// <summary>
+        /// Draws the difficulty choice.
+        /// </summary>
         private void DrawDifficultyChoice(
             RunDifficulty difficulty,
             float buttonX,
@@ -456,6 +528,9 @@ namespace ReturnVector.Core
                 menuHintStyle);
         }
 
+        /// <summary>
+        /// Draws the player health.
+        /// </summary>
         private void DrawPlayerHealth()
         {
             if (playerHealth == null)
@@ -492,6 +567,9 @@ namespace ReturnVector.Core
             GUI.color = previous;
         }
 
+        /// <summary>
+        /// Draws the boss health.
+        /// </summary>
         private void DrawBossHealth()
         {
             ReturnWardenHealth boss = ReturnWardenHealth.Active;
@@ -545,6 +623,9 @@ namespace ReturnVector.Core
             GUI.color = previous;
         }
 
+        /// <summary>
+        /// Draws the victory screen.
+        /// </summary>
         private void DrawVictoryScreen()
         {
             float panelWidth = Mathf.Min(560f, Screen.width - 48f);
@@ -604,6 +685,9 @@ namespace ReturnVector.Core
                 subtitleStyle);
         }
 
+        /// <summary>
+        /// Draws the loss screen.
+        /// </summary>
         private void DrawLossScreen()
         {
             Rect titleRect =
@@ -632,6 +716,9 @@ namespace ReturnVector.Core
             GUI.Label(subtitleRect, "R — Restart     Q — Menu", subtitleStyle);
         }
 
+        /// <summary>
+        /// Draws the stat row.
+        /// </summary>
         private void DrawStatRow(
             float x,
             float y,
@@ -650,6 +737,9 @@ namespace ReturnVector.Core
                 statValueStyle);
         }
 
+        /// <summary>
+        /// Formats elapsed run time for the HUD and result screen.
+        /// </summary>
         private static string FormatTime(float seconds)
         {
             seconds = Mathf.Max(0f, seconds);
@@ -658,6 +748,9 @@ namespace ReturnVector.Core
             return $"{minutes:00}:{remaining:00.00}";
         }
 
+        /// <summary>
+        /// Creates the runtime GUI styles when they are first needed.
+        /// </summary>
         private void EnsureStyles()
         {
             if (titleStyle != null)

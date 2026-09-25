@@ -4,6 +4,8 @@ using ReturnVector.Core;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Return Warden hit rules, phase thresholds and recall relationship.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>
@@ -12,9 +14,11 @@ namespace ReturnVector.Enemies
     [DisallowMultipleComponent]
     public sealed class ReturnWardenHealth : EnemyHealth
     {
+        // Warden variables
         [SerializeField] private ReturnWardenTuning tuning;
         [SerializeField] private WeaponRecallConstraint recallConstraint;
 
+        // Runtime state variables
         private bool phaseTwoStarted;
         private bool phaseThreeStarted;
         private int transitionTargetPhase;
@@ -44,11 +48,17 @@ namespace ReturnVector.Enemies
         public event Action PhaseTwoStarted;
         public event Action PhaseThreeStarted;
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             Active = this;
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             if (Active == this)
@@ -57,6 +67,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Assigns Warden tuning, resets phase state and configures the boss health pool.
+        /// </summary>
         public void ConfigureBoss(
             ReturnWardenTuning newTuning,
             WeaponRecallConstraint newRecallConstraint)
@@ -74,12 +87,18 @@ namespace ReturnVector.Enemies
                     : 12f);
         }
 
+        /// <summary>
+        /// Completes the phase transition and updates the owning state.
+        /// </summary>
         public void CompletePhaseTransition()
         {
             IsTransitioning = false;
             transitionTargetPhase = 0;
         }
 
+        /// <summary>
+        /// Resolves the weapon hit.
+        /// </summary>
         public override WeaponHitResult ResolveWeaponHit(
             in DamageInfo damage)
         {
@@ -166,12 +185,18 @@ namespace ReturnVector.Enemies
                 : new WeaponHitResult(false, false);
         }
 
+        /// <summary>
+        /// Applies an incoming damage payload to this target.
+        /// </summary>
         public override void ReceiveDamage(
             in DamageInfo damage)
         {
             ResolveWeaponHit(in damage);
         }
 
+        /// <summary>
+        /// Applies the boss damage.
+        /// </summary>
         private bool ApplyBossDamage(
             in DamageInfo damage)
         {
@@ -192,6 +217,9 @@ namespace ReturnVector.Enemies
             return damaged;
         }
 
+        /// <summary>
+        /// Checks whether the begin phase three should occur.
+        /// </summary>
         private bool ShouldBeginPhaseThree(float incomingDamage)
         {
             return
@@ -204,6 +232,9 @@ namespace ReturnVector.Enemies
                 incomingDamage >= CurrentHealth;
         }
 
+        /// <summary>
+        /// Checks whether the Warden has crossed the phase-two health threshold.
+        /// </summary>
         private void CheckPhaseTwoTransition()
         {
             if (GameDifficulty.MaxBossPhases < 2 ||
@@ -222,6 +253,9 @@ namespace ReturnVector.Enemies
             PhaseTwoStarted?.Invoke();
         }
 
+        /// <summary>
+        /// Starts the phase three.
+        /// </summary>
         private void BeginPhaseThree()
         {
             phaseThreeStarted = true;
@@ -235,6 +269,9 @@ namespace ReturnVector.Enemies
             PhaseThreeStarted?.Invoke();
         }
 
+        /// <summary>
+        /// Scales the damage.
+        /// </summary>
         private static DamageInfo ScaleDamage(
             in DamageInfo original,
             float multiplier)

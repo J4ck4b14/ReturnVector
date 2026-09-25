@@ -2,6 +2,8 @@ using NUnit.Framework;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Edit Mode coverage for RecallTravelMath.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -9,6 +11,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class RecallTravelMathTests
     {
+        /// <summary>
+        /// Verifies that accelerate approaches max without overshoot.
+        /// </summary>
         [Test]
         public void Accelerate_ApproachesMaxWithoutOvershoot()
         {
@@ -16,6 +21,9 @@ namespace ReturnVector.Tests
             Assert.AreEqual(20f, speed, 0.0001f);
         }
 
+        /// <summary>
+        /// Verifies that step distance does not overshoot target.
+        /// </summary>
         [Test]
         public void StepDistance_DoesNotOvershootTarget()
         {
@@ -23,6 +31,9 @@ namespace ReturnVector.Tests
             Assert.AreEqual(1.25f, distance, 0.0001f);
         }
 
+        /// <summary>
+        /// Verifies that steer rotates toward desired direction.
+        /// </summary>
         [Test]
         public void Steer_RotatesTowardDesiredDirection()
         {
@@ -37,6 +48,9 @@ namespace ReturnVector.Tests
             Assert.AreEqual(1f, result.magnitude, 0.0001f);
         }
 
+        /// <summary>
+        /// Verifies that near catch turn rate increases close to target.
+        /// </summary>
         [Test]
         public void NearCatchTurnRate_IncreasesCloseToTarget()
         {
@@ -47,6 +61,9 @@ namespace ReturnVector.Tests
             Assert.Greater(near, far);
         }
 
+        /// <summary>
+        /// Verifies that catch ease reaches one.
+        /// </summary>
         [Test]
         public void CatchEase_ReachesOne()
         {

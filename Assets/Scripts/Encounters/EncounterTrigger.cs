@@ -2,6 +2,8 @@ using ReturnVector.Player;
 using ReturnVector.Weapon;
 using UnityEngine;
 
+// Script summary: Starts an encounter when the player crosses its trigger.
+
 namespace ReturnVector.Encounters
 {
     /// <summary>
@@ -10,14 +12,21 @@ namespace ReturnVector.Encounters
     [DisallowMultipleComponent]
     public sealed class EncounterTrigger : MonoBehaviour
     {
+        // Encounter variables
         [SerializeField] private EncounterController encounter;
         private bool fired;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(EncounterController newEncounter)
         {
             encounter = newEncounter;
         }
 
+        /// <summary>
+        /// Handles a collider entering this trigger.
+        /// </summary>
         private void OnTriggerEnter(Collider other)
         {
             if (fired || encounter == null)

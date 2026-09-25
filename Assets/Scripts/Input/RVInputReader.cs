@@ -2,6 +2,8 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+// Script summary: Thin input boundary for gameplay code. It keeps concrete Input System assets out of combat and weapon classes.
+
 namespace ReturnVector.Input
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace ReturnVector.Input
     /// </summary>
     public sealed class RVInputReader : MonoBehaviour
     {
+        // Input variables
         [SerializeField] private InputActionAsset actions;
         [SerializeField] private string gameplayMapName = "Gameplay";
 
@@ -26,6 +29,7 @@ namespace ReturnVector.Input
         public Vector2 Aim => aim != null ? aim.ReadValue<Vector2>() : Vector2.zero;
         public bool IsReady => gameplayMap != null;
 
+        // Player variables
         public AimInputKind AimKind
         {
             get
@@ -48,22 +52,34 @@ namespace ReturnVector.Input
         public event Action DodgePressed;
         public event Action RestartPressed;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             ResolveActions();
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             ResolveActions();
             BindAndEnable();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             UnbindAndDisable();
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(InputActionAsset actionAsset)
         {
             UnbindAndDisable();
@@ -76,6 +92,9 @@ namespace ReturnVector.Input
             }
         }
 
+        /// <summary>
+        /// Resolves the actions.
+        /// </summary>
         private void ResolveActions()
         {
             gameplayMap = null;
@@ -108,6 +127,9 @@ namespace ReturnVector.Input
             restart = gameplayMap.FindAction("Restart", true);
         }
 
+        /// <summary>
+        /// Binds gameplay callbacks and enables the configured Input System actions.
+        /// </summary>
         private void BindAndEnable()
         {
             if (gameplayMap == null || callbacksBound)
@@ -123,6 +145,9 @@ namespace ReturnVector.Input
             gameplayMap.Enable();
         }
 
+        /// <summary>
+        /// Unbinds gameplay callbacks and disables the configured Input System actions.
+        /// </summary>
         private void UnbindAndDisable()
         {
             if (gameplayMap == null)
@@ -143,9 +168,21 @@ namespace ReturnVector.Input
             gameplayMap.Disable();
         }
 
+        /// <summary>
+        /// Publishes the throw input event.
+        /// </summary>
         private void OnThrowPerformed(InputAction.CallbackContext context) => ThrowPressed?.Invoke();
+        /// <summary>
+        /// Publishes the recall input event.
+        /// </summary>
         private void OnRecallPerformed(InputAction.CallbackContext context) => RecallPressed?.Invoke();
+        /// <summary>
+        /// Publishes the dodge input event.
+        /// </summary>
         private void OnDodgePerformed(InputAction.CallbackContext context) => DodgePressed?.Invoke();
+        /// <summary>
+        /// Publishes the terminal-state restart input event.
+        /// </summary>
         private void OnRestartPerformed(InputAction.CallbackContext context) => RestartPressed?.Invoke();
     }
 }

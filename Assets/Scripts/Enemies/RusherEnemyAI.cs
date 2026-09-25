@@ -4,6 +4,8 @@ using ReturnVector.GameFeel;
 using ReturnVector.Player;
 using UnityEngine;
 
+// Script summary: Closes distance faster while the player is weaponless and resolves a telegraphed short-range strike.
+
 namespace ReturnVector.Enemies
 {
     /// <summary>
@@ -12,12 +14,14 @@ namespace ReturnVector.Enemies
     [DisallowMultipleComponent]
     public sealed class RusherEnemyAI : MonoBehaviour, IEnemyAttackSource
     {
+        // Enemy variables
         [SerializeField] private EnemyMotor motor;
         [SerializeField] private EnemyHealth health;
         [SerializeField] private RusherEnemyTuning tuning;
         [SerializeField] private Transform player;
         [SerializeField] private PlayerTacticalStateSource tacticalState;
 
+        // Runtime state variables
         private RusherEnemyState state;
         private float stateTimer;
         private float stateDuration;
@@ -43,6 +47,9 @@ namespace ReturnVector.Enemies
 
         public Vector3 AttackDirection => attackDirection;
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             EnemyMotor newMotor,
             EnemyHealth newHealth,
@@ -60,6 +67,9 @@ namespace ReturnVector.Enemies
             stateDuration = 0f;
         }
 
+        /// <summary>
+        /// Advances the component for the current frame.
+        /// </summary>
         private void Update()
         {
             if (player == null ||
@@ -88,6 +98,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Advances the the pursuit state for the current frame.
+        /// </summary>
         private void TickPursuit(float deltaTime)
         {
             bool exposed =
@@ -125,6 +138,9 @@ namespace ReturnVector.Enemies
                 tuning.AttackRange * 0.85f);
         }
 
+        /// <summary>
+        /// Advances the the windup state for the current frame.
+        /// </summary>
         private void TickWindup(float deltaTime)
         {
             motor?.Stop();
@@ -146,6 +162,9 @@ namespace ReturnVector.Enemies
             stateTimer = stateDuration;
         }
 
+        /// <summary>
+        /// Advances the the recovery state for the current frame.
+        /// </summary>
         private void TickRecovery(float deltaTime)
         {
             motor?.Stop();
@@ -159,6 +178,9 @@ namespace ReturnVector.Enemies
             }
         }
 
+        /// <summary>
+        /// Resolves the strike.
+        /// </summary>
         private void ResolveStrike()
         {
             float distance =
@@ -190,6 +212,9 @@ namespace ReturnVector.Enemies
             target.ReceiveDamage(in damage);
         }
 
+        /// <summary>
+        /// Returns the flat direction to player.
+        /// </summary>
         private Vector3 FlatDirectionToPlayer()
         {
             Vector3 direction = player.position - transform.position;
@@ -200,6 +225,9 @@ namespace ReturnVector.Enemies
                 : transform.forward;
         }
 
+        /// <summary>
+        /// Returns the flat distance.
+        /// </summary>
         private static float FlatDistance(Vector3 a, Vector3 b)
         {
             a.y = 0f;

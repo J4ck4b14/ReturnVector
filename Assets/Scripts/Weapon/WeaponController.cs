@@ -2,6 +2,8 @@ using System;
 using ReturnVector.Debugging;
 using UnityEngine;
 
+// Script summary: Runtime owner of the weapon lifecycle. Motion systems are separate and may only act while the corresponding explicit state is active.
+
 namespace ReturnVector.Weapon
 {
     /// <summary>
@@ -10,13 +12,16 @@ namespace ReturnVector.Weapon
     /// </summary>
     public sealed class WeaponController : MonoBehaviour
     {
+        // Collision variables
         private const int HeldHitBufferSize = 24;
         private const int HeldOverlapBufferSize = 24;
 
+        // Weapon variables
         [SerializeField] private Transform owner;
         [SerializeField] private Transform heldAnchor;
         [SerializeField] private RVDebugSettings debugSettings;
 
+        // Collision variables
         private readonly RaycastHit[] heldHitBuffer =
             new RaycastHit[HeldHitBufferSize];
         private readonly Collider[] heldOverlapBuffer =
@@ -35,11 +40,17 @@ namespace ReturnVector.Weapon
 
         public event Action<WeaponState, WeaponState> StateChanged;
 
+        /// <summary>
+        /// Caches required references and prepares runtime state before the object starts running.
+        /// </summary>
         private void Awake()
         {
             EnsureStateMachine();
         }
 
+        /// <summary>
+        /// Subscribes to runtime events when the component becomes active.
+        /// </summary>
         private void OnEnable()
         {
             EnsureStateMachine();
@@ -47,6 +58,9 @@ namespace ReturnVector.Weapon
             SnapToHeldAnchorIfNeeded();
         }
 
+        /// <summary>
+        /// Unsubscribes from runtime events when the component is disabled.
+        /// </summary>
         private void OnDisable()
         {
             if (stateMachine != null)
@@ -55,11 +69,17 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Updates presentation after regular frame logic has completed.
+        /// </summary>
         private void LateUpdate()
         {
             SnapToHeldAnchorIfNeeded();
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             Transform newOwner,
             RVDebugSettings settings)
@@ -67,6 +87,9 @@ namespace ReturnVector.Weapon
             Configure(newOwner, null, settings);
         }
 
+        /// <summary>
+        /// Assigns the runtime references and tuning used by the component.
+        /// </summary>
         public void Configure(
             Transform newOwner,
             Transform newHeldAnchor,
@@ -78,6 +101,9 @@ namespace ReturnVector.Weapon
             SnapToHeldAnchorIfNeeded();
         }
 
+        /// <summary>
+        /// Copies throw collision settings used to keep the held baton outside solid geometry.
+        /// </summary>
         public void ConfigureHeldCollision(
             WeaponThrowTuning tuning)
         {
@@ -97,6 +123,9 @@ namespace ReturnVector.Weapon
             SnapToHeldAnchorIfNeeded();
         }
 
+        /// <summary>
+        /// Validates and resolves the held baton position before starting a throw.
+        /// </summary>
         public bool PrepareOutboundLaunch()
         {
             WeaponState state = State;
@@ -109,27 +138,51 @@ namespace ReturnVector.Weapon
             return SnapToHeldAnchorIfNeeded();
         }
 
+        /// <summary>
+        /// Starts the throw anticipation.
+        /// </summary>
         public bool BeginThrowAnticipation() =>
             TrySetState(WeaponState.ThrowAnticipation);
 
+        /// <summary>
+        /// Returns the launch outbound.
+        /// </summary>
         public bool LaunchOutbound() =>
             TrySetState(WeaponState.Outbound);
 
+        /// <summary>
+        /// Returns the mark parked.
+        /// </summary>
         public bool MarkParked() =>
             TrySetState(WeaponState.Parked);
 
+        /// <summary>
+        /// Moves the weapon into the embedded state after an authored blocking interaction.
+        /// </summary>
         public bool MarkEmbedded() =>
             TrySetState(WeaponState.Embedded);
 
+        /// <summary>
+        /// Starts the recall.
+        /// </summary>
         public bool BeginRecall() =>
             TrySetState(WeaponState.Returning);
 
+        /// <summary>
+        /// Starts the catch.
+        /// </summary>
         public bool BeginCatch() =>
             TrySetState(WeaponState.Catching);
 
+        /// <summary>
+        /// Completes the catch and updates the owning state.
+        /// </summary>
         public bool CompleteCatch() =>
             TrySetState(WeaponState.Held);
 
+        /// <summary>
+        /// Resets the to held.
+        /// </summary>
         public void ResetToHeld()
         {
             EnsureStateMachine();
@@ -137,6 +190,9 @@ namespace ReturnVector.Weapon
             SnapToHeldAnchorIfNeeded();
         }
 
+        /// <summary>
+        /// Attempts to move the weapon into the requested lifecycle state.
+        /// </summary>
         private bool TrySetState(WeaponState next)
         {
             EnsureStateMachine();
@@ -154,6 +210,9 @@ namespace ReturnVector.Weapon
             return changed;
         }
 
+        /// <summary>
+        /// Responds to a weapon state transition.
+        /// </summary>
         private void HandleTransition(
             WeaponState previous,
             WeaponState next)
@@ -175,6 +234,9 @@ namespace ReturnVector.Weapon
             StateChanged?.Invoke(previous, next);
         }
 
+        /// <summary>
+        /// Creates the weapon state machine when it has not been initialized yet.
+        /// </summary>
         private void EnsureStateMachine()
         {
             if (stateMachine == null)
@@ -183,6 +245,9 @@ namespace ReturnVector.Weapon
             }
         }
 
+        /// <summary>
+        /// Keeps the held baton at the nearest reachable anchor position outside solid geometry.
+        /// </summary>
         private bool SnapToHeldAnchorIfNeeded()
         {
             if (heldAnchor == null)
@@ -234,6 +299,9 @@ namespace ReturnVector.Weapon
             return true;
         }
 
+        /// <summary>
+        /// Draws Scene view gizmos while the object is selected.
+        /// </summary>
         private void OnDrawGizmosSelected()
         {
             if (owner == null ||

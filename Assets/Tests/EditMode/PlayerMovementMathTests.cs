@@ -2,6 +2,8 @@ using NUnit.Framework;
 using ReturnVector.Player;
 using UnityEngine;
 
+// Script summary: Edit Mode coverage for PlayerMovementMath.
+
 namespace ReturnVector.Tests
 {
     /// <summary>
@@ -9,6 +11,9 @@ namespace ReturnVector.Tests
     /// </summary>
     public sealed class PlayerMovementMathTests
     {
+        /// <summary>
+        /// Verifies that diagonal input is clamped to unit length.
+        /// </summary>
         [Test]
         public void DiagonalInput_IsClampedToUnitLength()
         {
@@ -19,6 +24,9 @@ namespace ReturnVector.Tests
             Assert.That(move.magnitude, Is.EqualTo(1f).Within(0.0001f));
         }
 
+        /// <summary>
+        /// Verifies that dodge prefers movement input.
+        /// </summary>
         [Test]
         public void DodgePrefersMovementInput()
         {
@@ -32,6 +40,9 @@ namespace ReturnVector.Tests
             Assert.That(direction.z, Is.EqualTo(0f).Within(0.0001f));
         }
 
+        /// <summary>
+        /// Verifies that dodge falls back to AIm when stationary.
+        /// </summary>
         [Test]
         public void DodgeFallsBackToAimWhenStationary()
         {
@@ -44,6 +55,9 @@ namespace ReturnVector.Tests
             Assert.That(direction.x, Is.EqualTo(-1f).Within(0.0001f));
         }
 
+        /// <summary>
+        /// Verifies that dodge distance delta never moves backward.
+        /// </summary>
         [Test]
         public void DodgeDistanceDelta_NeverMovesBackward()
         {
@@ -63,6 +77,9 @@ namespace ReturnVector.Tests
             Assert.That(delta, Is.EqualTo(1f).Within(0.0001f));
         }
 
+        /// <summary>
+        /// Verifies that dodge distance delta clamps descending cuRVe motion to zero.
+        /// </summary>
         [Test]
         public void DodgeDistanceDelta_ClampsDescendingCurveMotionToZero()
         {
